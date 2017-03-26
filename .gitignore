@@ -1,0 +1,8 @@
+packages
+.idea
+.vs
+*.user
+Santol/bin
+Santol/obj
+Santol/x64
+Santol/x86
