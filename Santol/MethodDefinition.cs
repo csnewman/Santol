@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
@@ -15,22 +16,13 @@ namespace Santol
         public bool DoesReturn => Definition.ReturnType.MetadataType != MetadataType.Void;
         public IList<CodeSegment> Segments { get; set; }
 
-
-        public IList<VariableDefinition> Locals { get; }
-
         public MethodDefinition(MMethodDefinition definition)
         {
             Definition = definition;
             Body = definition.Body;
             Processor = Body.GetILProcessor();
-            Locals = new List<VariableDefinition>();
         }
-
-        public void AddLocal(VariableDefinition variable)
-        {
-            Locals.Add(variable);
-        }
-
+        
         public void PrintInstructions()
         {
             //Find all jump destinations
@@ -60,13 +52,13 @@ namespace Santol
             {
                 Console.WriteLine($"    {segment.Name}:");
                 Console.WriteLine($"      Force No Incomings: {segment.ForceNoIncomings}");
-                Console.WriteLine($"      Incoming Size: {segment.IncomingSize}");
-                Console.WriteLine($"      Calls: {segment.Calls.Count}");
+                Console.WriteLine(
+                    $"      Incoming: {(!segment.HasIncoming ? "none" : string.Join<TypeReference>(",", segment.Incoming))}");
+                Console.WriteLine($"      Calls: {segment.Callers.Count}");
                 Console.WriteLine($"      End Point: {segment.IsEndPoint}");
-                foreach (Instruction instruction in segment.Instructions)
+                foreach (IOperation operation in segment.Operations)
                 {
-                    Console.WriteLine("        " + instruction);
-                    //                    Console.WriteLine("        " + instruction + " Pops " + CalculatePopSize(instruction, methodReturns));
+                    Console.WriteLine("        " + operation.ToFullString());
                 }
             }
         }
@@ -95,7 +87,7 @@ namespace Santol
                 //Ensure first pass fixed all mid jumps
                 if (pass == 0)
                     @fixed = midJumps.Count;
-                else if (midJumps.Count  != 0)
+                else if (midJumps.Count != 0)
                     throw new NotSupportedException("Unable to break up branches");
             }
             return @fixed;
@@ -104,22 +96,28 @@ namespace Santol
         private IList<Instruction> GetJumpDestinations()
         {
             IList<Instruction> jumpDestinations = new List<Instruction>();
+
+            //Find all branches
             foreach (Instruction instruction in Body.Instructions)
             {
                 OpCode code = instruction.OpCode;
-                if (code.FlowControl == FlowControl.Branch || code.FlowControl == FlowControl.Cond_Branch)
+                if (code.FlowControl != FlowControl.Branch && code.FlowControl != FlowControl.Cond_Branch) continue;
+                switch (code.OperandType)
                 {
-                    if (code.OperandType == OperandType.ShortInlineBrTarget ||
-                        code.OperandType == OperandType.InlineBrTarget)
+                    case OperandType.ShortInlineBrTarget:
+                    case OperandType.InlineBrTarget:
                         jumpDestinations.AddOpt((Instruction) instruction.Operand);
-                    else if (code.OperandType == OperandType.InlineSwitch)
+                        break;
+                    case OperandType.InlineSwitch:
                         jumpDestinations.AddOpt((Instruction[]) instruction.Operand);
-                    else
+                        break;
+                    default:
                         throw new NotImplementedException("Unknown branch instruction " + instruction + "  " +
                                                           instruction.Operand.GetType());
                 }
             }
 
+            //Add first instruction if missing
             Instruction firstInst = Body.Instructions.Count > 0 ? Body.Instructions[0] : null;
             if (firstInst != null && !jumpDestinations.Contains(firstInst))
                 jumpDestinations.Add(firstInst);
@@ -176,6 +174,7 @@ namespace Santol
             CodeSegment currentSegment = null;
             foreach (Instruction instruction in Body.Instructions)
             {
+                //Start new segment on first instruction
                 if (jumpDestinations.Contains(instruction))
                 {
                     currentSegment = new CodeSegment(this, "SEG_" + (segmentLId++));
@@ -190,12 +189,7 @@ namespace Santol
 
         public CodeSegment GetSegment(Instruction instruction)
         {
-            foreach (CodeSegment segment in Segments)
-            {
-                if (segment.Instructions.Contains(instruction))
-                    return segment;
-            }
-            return null;
+            return Segments.FirstOrDefault(segment => segment.Instructions.Contains(instruction));
         }
 
         public void DetectNoIncomings()
@@ -203,6 +197,7 @@ namespace Santol
             IList<Instruction> jumpDestinations = new List<Instruction>();
             foreach (Instruction instruction in Body.Instructions)
             {
+                //Mark segments with only backward control flows
                 OpCode code = instruction.OpCode;
                 if (code.FlowControl == FlowControl.Branch || code.FlowControl == FlowControl.Cond_Branch)
                 {

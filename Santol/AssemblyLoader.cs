@@ -1,27 +1,20 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
-using MVariableDefinition = Mono.Cecil.Cil.VariableDefinition;
 
 namespace Santol
 {
     public class AssemblyLoader
     {
-        private TypeSystem typeSystem;
-
-        public void Load(string file)
+        public IList<ClassDefinition> Load(string file)
         {
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(file);
+            TypeSystem typeSystem = assembly.MainModule.TypeSystem;
 
-            typeSystem = assembly.MainModule.TypeSystem;
-           
-
-//            TypeDefinition type = assembly.MainModule.GetType("TestOS.Program");
+            IList<ClassDefinition> classes = new List<ClassDefinition>();
 
             foreach (TypeDefinition type in assembly.MainModule.Types)
             {
@@ -29,65 +22,57 @@ namespace Santol
 
                 foreach (MMethodDefinition method in type.Methods)
                 {
-                    LoadMethod(@class, method);
+                    LoadMethod(@class, method, typeSystem);
                 }
+
+                classes.Add(@class);
             }
+
+            return classes;
         }
 
-        private void LoadMethod(ClassDefinition @class, MMethodDefinition methodD)
+        private void LoadMethod(ClassDefinition @class, MMethodDefinition methodD, TypeSystem typeSystem)
         {
             MethodDefinition method = new MethodDefinition(methodD);
             MethodBody body = methodD.Body;
             Console.WriteLine($"Method {method.Name}");
 
-            if (body == null || !body.HasVariables)
+            if (body == null)
                 return;
 
+            Console.WriteLine("  Parameters");
+            foreach (ParameterDefinition parameter in methodD.Parameters)
+            {
+                Console.WriteLine($"    {parameter.Index}: {parameter.ParameterType.ToNiceString()} {parameter.Name}");
+            }
+
             Console.WriteLine("  Locals");
-            foreach (MVariableDefinition variableD in methodD.Body.Variables)
+            foreach (VariableDefinition variable in methodD.Body.Variables)
             {
                 string name = "L_" +
-                              (string.IsNullOrEmpty(variableD.Name) ? variableD.Index.ToString() : variableD.Name);
-
-                VariableDefinition variable = new VariableDefinition(variableD.Index, name, variableD.VariableType);
-                Console.WriteLine($"    {variable}");
-
-                method.AddLocal(variable);
+                              (string.IsNullOrEmpty(variable.Name) ? variable.Index.ToString() : variable.Name);
+                Console.WriteLine($"    {variable.Index}: {variable.VariableType.ToNiceString()} {name}");
             }
 
             body.SimplifyMacros();
 
             Console.WriteLine($"  Fixed {method.FixFallthroughs()} fallthroughs");
             Console.WriteLine($"  Fixed {method.FixMidBranches()} insegment jumps");
-            
+
             method.PrintInstructions();
             method.GenerateSegments();
             method.DetectNoIncomings();
 
-            //            IList<CodeSegment> filledSegments = new List<CodeSegment>();
-            //            segments[0].ForceNoIncomings = true;
-            //            FillSegmentInfo(segments, segments[0], methodD.ReturnType.MetadataType != MetadataType.Void, filledSegments);
-
-
-            //FindCalls(body, segments);
-
             foreach (CodeSegment segment in method.Segments)
-            {
                 segment.ParseInstructions(typeSystem);
-            }
 
 
             method.PrintSegments();
 
             if (body.Scope != null)
                 throw new NotImplementedException("Scopes are not supported yet");
+
+            @class.AddMethod(method);
         }
-
-      
-
-        
-
-
-        
     }
 }
