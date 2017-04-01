@@ -67,7 +67,6 @@ namespace Santol
     public class LoadLocal : IOperation
     {
         public Mono.Cecil.Cil.VariableDefinition Variable { get; }
-        public int Slot => Variable.Index;
         public TypeReference ResultType => Variable.VariableType;
 
         public LoadLocal(Mono.Cecil.Cil.VariableDefinition definition)
@@ -75,7 +74,7 @@ namespace Santol
             Variable = definition;
         }
 
-        public string ToFullString() => $"LoadLocal [Slot: {Slot}, Variable: {Variable}, Type: {ResultType}]";
+        public string ToFullString() => $"LoadLocal [Variable: {Variable}, Type: {ResultType}]";
     }
 
     public class LoadArg : IOperation

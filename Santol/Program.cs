@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Santol
 {
@@ -7,7 +8,14 @@ namespace Santol
         static void Main(string[] args)
         {
             AssemblyLoader loader = new AssemblyLoader();
-            loader.Load("TestOS.exe");
+            IList<ClassDefinition> classes = loader.Load("TestOS.exe");
+
+            foreach (ClassDefinition classDefinition in classes)
+            {
+                CodeGenerator generator = new CodeGenerator();
+                generator.GenerateClass(classDefinition);
+            }
+
             Console.ReadLine();
         }
     }

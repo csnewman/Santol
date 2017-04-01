@@ -18,6 +18,8 @@ namespace Santol
 
             foreach (TypeDefinition type in assembly.MainModule.Types)
             {
+                if (type.Name.Equals("<Module>")) continue;
+
                 ClassDefinition @class = new ClassDefinition(type.Name, type.Namespace, type.FullName);
 
                 foreach (MMethodDefinition method in type.Methods)
