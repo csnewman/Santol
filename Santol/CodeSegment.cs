@@ -50,18 +50,12 @@ namespace Santol
         {
             Operations.Clear();
 
-            bool reachedEnd = false;
-
-
             Stack<TypeReference> typeStack = HasIncoming
                 ? new Stack<TypeReference>(Incoming)
                 : new Stack<TypeReference>();
 
             foreach (Instruction instruction in Instructions)
             {
-                if (reachedEnd)
-                    throw new ArgumentException("End instruction has been reached, no more instructions were expected");
-
                 switch (instruction.OpCode.Code)
                 {
                     case Code.Nop:
@@ -186,23 +180,24 @@ namespace Santol
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         segment.AddCaller(this, typeStack.ToArray());
                         Operations.Add(new Branch(segment));
-                        reachedEnd = true;
-                        break;
+                        return;
                     }
                     case Code.Brtrue:
                     {
                         TypeReference v1 = typeStack.Pop();
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
-                        segment.AddCaller(this, typeStack.ToArray());
-                        Operations.Add(new ConditionalBranch(segment, ConditionalBranch.Types.True, v1));
-                        break;
+                        CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
+                        TypeReference[] stack = typeStack.ToArray();
+                        segment.AddCaller(this, stack);
+                        elseSegment.AddCaller(this, stack);
+                        Operations.Add(new ConditionalBranch(segment, elseSegment, ConditionalBranch.Types.True, v1));
+                        return;
                     }
                     case Code.Ret:
                     {
                         TypeReference type = Method.DoesReturn ? typeStack.Pop() : null;
                         Operations.Add(new Return(type));
-                        reachedEnd = true;
-                        break;
+                        return;
                     }
                     default:
                         throw new NotImplementedException("Unknown opcode " + instruction);

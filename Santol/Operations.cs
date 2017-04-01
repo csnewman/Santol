@@ -176,20 +176,22 @@ namespace Santol
         }
 
         public CodeSegment Segment { get; }
+        public CodeSegment ElseSegment { get; }
         public Types Type { get; }
         public TypeReference SourceType { get; }
         public TypeReference ResultType => null;
 
 
-        public ConditionalBranch(CodeSegment segment, Types type, TypeReference sourceType)
+        public ConditionalBranch(CodeSegment segment, CodeSegment elseSegment, Types type, TypeReference sourceType)
         {
             Segment = segment;
+            ElseSegment = elseSegment;
             Type = type;
             SourceType = sourceType;
         }
 
         public string ToFullString()
-            => $"ConditionalBranch [Type: {Type}, Source Type: {SourceType}, Target: {Segment.Name}]";
+            => $"ConditionalBranch [Type: {Type}, Source Type: {SourceType}, Target: {Segment.Name}, Else {ElseSegment.Name}]";
     }
 
     public class Call : IOperation
