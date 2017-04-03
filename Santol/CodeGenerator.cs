@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using LLVMSharp;
@@ -16,6 +17,17 @@ namespace Santol
         private LLVMModuleRef _module;
         private LLVMContextRef _context;
         private LLVMBuilderRef _builder;
+        private TypeSystem _typeSystem;
+        private int _lastTempId;
+        private IDictionary<MMethodDefinition, LLVMValueRef> _functionRefs;
+        private string _target;
+        private LLVMPassManagerRef _passManagerRef;
+
+        public CodeGenerator(string target, LLVMPassManagerRef passManagerRef)
+        {
+            _target = target;
+            _passManagerRef = passManagerRef;
+        }
 
         public void GenerateClass(ClassDefinition @class)
         {
@@ -25,6 +37,18 @@ namespace Santol
             _context = LLVM.GetModuleContext(_module);
             _builder = LLVM.CreateBuilder();
 
+            _functionRefs = new Dictionary<MMethodDefinition, LLVMValueRef>();
+
+            foreach (MethodDefinition methodDefinition in @class.Methods)
+            {
+                //Define function
+                MMethodDefinition definition = methodDefinition.Definition;
+                LLVMTypeRef functionType = GetFunctionType(definition);
+                LLVMValueRef functionRef = LLVM.AddFunction(_module, definition.GetName(), functionType);
+                LLVM.SetLinkage(functionRef, LLVMLinkage.LLVMExternalLinkage);
+
+                _functionRefs.Add(definition, functionRef);
+            }
 
             foreach (MethodDefinition methodDefinition in @class.Methods)
             {
@@ -33,19 +57,38 @@ namespace Santol
 
             Console.WriteLine("\n\nDump:");
             LLVM.DumpModule(_module);
+            
+            //Optimise
+            LLVM.SetTarget(_module, _target);
+            LLVM.RunPassManager(_passManagerRef, _module);
+
+            Console.WriteLine("\n\nDump:");
+            LLVM.DumpModule(_module);
+
+            //Compile
+            LLVMTargetRef tref;
+            IntPtr error;
+            LLVM.GetTargetFromTriple(_target, out tref, out error);
+
+            LLVMTargetMachineRef machineRef = LLVM.CreateTargetMachine(tref, _target,
+                "generic", "",
+                LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault, LLVMRelocMode.LLVMRelocDefault,
+                LLVMCodeModel.LLVMCodeModelDefault);
+
+            LLVM.TargetMachineEmitToFile(machineRef, _module,
+                Marshal.StringToHGlobalAnsi(@class.FullName.Replace('.', '_') + ".o"),
+                LLVMCodeGenFileType.LLVMObjectFile,
+                out error);
         }
 
         public void GenerateMethod(MethodDefinition method)
         {
             MMethodDefinition definition = method.Definition;
+            _typeSystem = definition.Module.TypeSystem;
 
-            //Define function
-            LLVMTypeRef functionType = GetFunctionType(definition);
-            LLVMValueRef functionRef = LLVM.AddFunction(_module, method.Definition.GetName(), functionType);
-            LLVM.SetLinkage(functionRef, LLVMLinkage.LLVMExternalLinkage);
-
-
+            LLVMValueRef functionRef = _functionRefs[definition];
             LLVMBasicBlockRef entryBlock = CreateBlock(functionRef, "entry");
+
             //Allocate locals
             LLVMValueRef[] localRefs;
             {
@@ -87,14 +130,19 @@ namespace Santol
                 LLVM.BuildBr(_builder, segmentBlocks[segments[0]]);
             }
 
+            _lastTempId = 0;
             foreach (CodeSegment segment in segments)
             {
+                LLVM.PositionBuilderAtEnd(_builder, segmentBlocks[segment]);
                 Stack<LLVMValueRef> stack = new Stack<LLVMValueRef>();
-                int lastTempId = 0;
+
+                if (segment.HasIncoming)
+                    foreach (LLVMValueRef incoming in segmentPhis[segment])
+                        stack.Push(incoming);
 
                 foreach (IOperation operation in segment.Operations)
                 {
-                    Console.WriteLine("> " + operation.ToFullString());
+                    //Console.WriteLine("> " + operation.ToFullString());
 
                     if (operation is LoadPrimitiveConstant)
                     {
@@ -104,39 +152,111 @@ namespace Santol
                     else if (operation is LoadLocal)
                     {
                         LoadLocal load = (LoadLocal) operation;
-                        stack.Push(LLVM.BuildLoad(_builder, localRefs[load.Variable.Index], "temp_" + lastTempId++));
+                        stack.Push(LLVM.BuildLoad(_builder, localRefs[load.Variable.Index], GetTempName()));
+                    }
+                    else if (operation is LoadArg)
+                    {
+                        LoadArg load = (LoadArg) operation;
+                        stack.Push(GenerateConversion(load.Parameter.ParameterType, load.ResultType,
+                            LLVM.GetParam(functionRef, (uint) load.Slot)));
                     }
                     else if (operation is StoreLocal)
                     {
                         StoreLocal store = (StoreLocal) operation;
-                        LLVM.BuildStore(_builder, stack.Pop(), localRefs[store.Destination.Index]);
+                        LLVMValueRef val = GenerateConversion(store.SourceType, store.Destination.VariableType,
+                            stack.Pop());
+                        LLVM.BuildStore(_builder, val, localRefs[store.Destination.Index]);
+                    }
+                    else if (operation is StoreDirect)
+                    {
+                        StoreDirect store = (StoreDirect) operation;
+
+                        LLVMValueRef val = GenerateConversion(store.SourceType, store.Type,
+                            stack.Pop());
+                        LLVMValueRef addr = GenerateConversion(store.AddressType, _typeSystem.UIntPtr,
+                            stack.Pop());
+                        LLVM.BuildStore(_builder, val, addr);
+                    }
+                    else if (operation is Convert)
+                    {
+                        Convert convert = (Convert) operation;
+                        stack.Push(GenerateConversion(convert.SourceType, convert.ResultType, stack.Pop()));
                     }
                     else if (operation is Numeric)
                     {
-                        Numeric numeric = (Numeric)operation;
+                        Numeric numeric = (Numeric) operation;
                         LLVMValueRef v2 = stack.Pop();
                         LLVMValueRef v1 = stack.Pop();
+                        stack.Push(GenerateNumeric(numeric.Operation, numeric.Lhs, v1, numeric.Rhs, v2,
+                            numeric.ResultType));
+                    }
+                    else if (operation is Comparison)
+                    {
+                        Comparison comparison = (Comparison) operation;
+                        LLVMValueRef v2 = stack.Pop();
+                        LLVMValueRef v1 = stack.Pop();
+                        stack.Push(GenerateComparison(comparison.Operation, comparison.Lhs, v1, comparison.Rhs, v2,
+                            comparison.ResultType));
+                    }
+                    else if (operation is Call)
+                    {
+                        Call call = (Call) operation;
 
-                        switch (numeric.Operation)
-                        {
-                            case Numeric.Operations.Add:
-                                stack.Push(LLVM.BuildAdd(_builder, v1, v2, "temp_" + lastTempId++));
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
+                        LLVMValueRef[] args = new LLVMValueRef[call.ArgTypes.Length];
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = stack.Pop();
 
-                        }
+                        LLVMValueRef? val = GenerateCall(call.Definition, call.ArgTypes, args);
+                        if (val.HasValue)
+                            stack.Push(val.Value);
                     }
                     else if (operation is Branch)
                     {
                         Branch branch = (Branch) operation;
-                        LLVM.BuildBr(_builder, segmentBlocks[branch.Segment]);
+                        CodeSegment otherSegment = branch.Segment;
 
-                        if(branch.Segment.HasIncoming)
+                        if (otherSegment.HasIncoming)
+                        {
+                            LLVMValueRef[] phis = segmentPhis[otherSegment];
+
+                            TypeReference[] sourceTypes = branch.Types;
+                            TypeReference[] targetTypes = otherSegment.Incoming;
+                            for (int i = 0; i < sourceTypes.Length; i++)
+                            {
+                                LLVMValueRef raw = stack.Pop();
+                                Console.WriteLine(i + ": " + sourceTypes[i] + "  " + raw);
+                                LLVMValueRef val = GenerateConversion(sourceTypes[i], targetTypes[i], raw);
+                                LLVMValueRef phi = phis[sourceTypes.Length - 1 - i];
+                                LLVM.AddIncoming(phi, new[] {val}, new[] {segmentBlocks[segment]}, 1);
+                            }
+                        }
+
+                        LLVM.BuildBr(_builder, segmentBlocks[otherSegment]);
+                    }
+                    else if (operation is ConditionalBranch)
+                    {
+                        ConditionalBranch branch = (ConditionalBranch) operation;
+                        LLVMValueRef v1 = GenerateConversion(branch.SourceType, _typeSystem.Boolean, stack.Pop());
+                        LLVM.BuildCondBr(_builder, v1, segmentBlocks[branch.Segment], segmentBlocks[branch.ElseSegment]);
+
+                        if (branch.Segment.HasIncoming || branch.ElseSegment.HasIncoming)
                             throw new NotImplementedException("Incoming passing not supported yet");
+                    }
+                    else if (operation is Return)
+                    {
+                        Return @return = (Return) operation;
+
+                        if (@return.HasValue)
+                            LLVM.BuildRet(_builder,
+                                GenerateConversion(@return.ValueType, definition.ReturnType, stack.Pop()));
+                        else
+                            LLVM.BuildRetVoid(_builder);
                     }
                     else
                     {
+                        Console.WriteLine("\n\nDump:");
+                        LLVM.DumpModule(_module);
+
                         throw new NotImplementedException("Operation generation is not implemented yet for " +
                                                           operation.ToFullString());
                     }
@@ -144,6 +264,12 @@ namespace Santol
             }
 
             Console.WriteLine("> " + method.Definition.GetName());
+        }
+
+        private string GetTempName()
+        {
+//            return "temp_" + _lastTempId++;
+            return "";
         }
 
         private LLVMValueRef GeneratePrimitiveConstant(TypeReference typeReference, object value)
@@ -191,7 +317,121 @@ namespace Santol
                     throw new NotImplementedException("Unknown type! " + typeReference);
             }
         }
-        
+
+        public LLVMValueRef GenerateConversion(TypeReference sourceType, TypeReference destType, LLVMValueRef value)
+        {
+            if (sourceType == destType)
+                return value;
+
+            switch (sourceType.MetadataType)
+            {
+                case MetadataType.Boolean:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.Int32:
+                            return LLVM.BuildZExt(_builder, value, ConvertType(destType), GetTempName());
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
+                case MetadataType.Char:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.Byte:
+                            return LLVM.BuildTrunc(_builder, value, ConvertType(destType), GetTempName());
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
+                case MetadataType.Int32:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.Byte:
+                        case MetadataType.Boolean:
+                        case MetadataType.Char:
+                            return LLVM.BuildTrunc(_builder, value, ConvertType(destType), GetTempName());
+                        case MetadataType.IntPtr:
+                            return LLVM.BuildIntToPtr(_builder, value, ConvertType(destType), GetTempName());
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
+                case MetadataType.IntPtr:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.UIntPtr:
+                            //TODO: Check
+                            return value;
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
+
+                default:
+                    throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+            }
+        }
+
+        public LLVMValueRef GenerateNumeric(Numeric.Operations op, TypeReference lhsType, LLVMValueRef lhs,
+            TypeReference rhsType, LLVMValueRef rhs, TypeReference resultType)
+        {
+            if (lhsType != rhsType)
+                throw new NotImplementedException("Numeric ops on different types not implemented yet");
+
+            switch (op)
+            {
+                case Numeric.Operations.Add:
+                    LLVMValueRef val = LLVM.BuildAdd(_builder, lhs, rhs, GetTempName());
+                    return GenerateConversion(lhsType, resultType, val);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(op), op, null);
+            }
+        }
+
+        public LLVMValueRef GenerateComparison(Comparison.Operations op, TypeReference lhsType, LLVMValueRef lhs,
+            TypeReference rhsType, LLVMValueRef rhs, TypeReference resultType)
+        {
+            if (lhsType != rhsType)
+                throw new NotImplementedException("Comparison ops on different types not implemented yet");
+
+            switch (op)
+            {
+                case Comparison.Operations.LessThan:
+                    //TODO: Ensure ints
+                    LLVMValueRef val = LLVM.BuildICmp(_builder, LLVMIntPredicate.LLVMIntSLT, lhs, rhs,
+                        GetTempName());
+                    return GenerateConversion(_typeSystem.Boolean, resultType, val);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(op), op, null);
+            }
+        }
+
+        public LLVMValueRef GetFunction(MMethodDefinition method)
+        {
+            if (_functionRefs.ContainsKey(method))
+                return _functionRefs[method];
+
+            throw new NotImplementedException("External functions not added yet!");
+        }
+
+        public LLVMValueRef? GenerateCall(MMethodDefinition method, TypeReference[] argTypes, LLVMValueRef[] args)
+        {
+            if (method.HasThis)
+                throw new NotImplementedException("Instance methods not supported");
+
+            LLVMValueRef func = GetFunction(method);
+
+            LLVMValueRef[] convArgs = new LLVMValueRef[args.Length];
+            for (int i = 0; i < args.Length; i++)
+                convArgs[i] = GenerateConversion(argTypes[i], method.Parameters[i].ParameterType, args[i]);
+
+            if (method.ReturnType.MetadataType != MetadataType.Void)
+                return LLVM.BuildCall(_builder, func, convArgs, GetTempName());
+
+            LLVM.BuildCall(_builder, func, convArgs, "");
+            return null;
+        }
+
         private LLVMBasicBlockRef CreateBlock(LLVMValueRef functionRef, string name)
         {
             LLVMBasicBlockRef block = LLVM.AppendBasicBlock(functionRef, name);

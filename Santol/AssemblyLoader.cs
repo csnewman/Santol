@@ -20,6 +20,9 @@ namespace Santol
             {
                 if (type.Name.Equals("<Module>")) continue;
 
+                Console.WriteLine("Type "+type+" ("+type.GetType()+")");
+                Console.WriteLine($"{type.MetadataType}  {type.Attributes}   {type.ClassSize}  {type.IsEnum} ");
+
                 ClassDefinition @class = new ClassDefinition(type.Name, type.Namespace, type.FullName);
 
                 foreach (MMethodDefinition method in type.Methods)

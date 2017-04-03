@@ -177,7 +177,7 @@ namespace Santol
                 //Start new segment on first instruction
                 if (jumpDestinations.Contains(instruction))
                 {
-                    currentSegment = new CodeSegment(this, "SEG_" + (segmentLId++));
+                    currentSegment = new CodeSegment(this, "seg_" + (segmentLId++));
                     Segments.Add(currentSegment);
                 }
                 if (currentSegment == null)

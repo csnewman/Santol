@@ -132,7 +132,8 @@ namespace Santol
             Operation = operation;
             Lhs = lhs;
             Rhs = rhs;
-            ResultType = typeSystem.Int32;
+            //TODO: Check whether change from int32 will break CIL code
+            ResultType = typeSystem.Boolean;
         }
 
         public string ToFullString()
@@ -156,11 +157,13 @@ namespace Santol
     public class Branch : IOperation
     {
         public CodeSegment Segment { get; }
+        public TypeReference[] Types { get; }
         public TypeReference ResultType => null;
 
-        public Branch(CodeSegment segment)
+        public Branch(CodeSegment segment, TypeReference[] types)
         {
             Segment = segment;
+            Types = types;
         }
 
         public string ToFullString() => $"Branch [Target: {Segment.Name}]";
@@ -168,29 +171,22 @@ namespace Santol
 
     public class ConditionalBranch : IOperation
     {
-        public enum Types
-        {
-            True,
-            False
-        }
-
         public CodeSegment Segment { get; }
         public CodeSegment ElseSegment { get; }
-        public Types Type { get; }
         public TypeReference SourceType { get; }
+        public TypeReference[] Types { get; }
         public TypeReference ResultType => null;
-
-
-        public ConditionalBranch(CodeSegment segment, CodeSegment elseSegment, Types type, TypeReference sourceType)
+        
+        public ConditionalBranch(CodeSegment segment, CodeSegment elseSegment, TypeReference sourceType, TypeReference[] types)
         {
             Segment = segment;
             ElseSegment = elseSegment;
-            Type = type;
             SourceType = sourceType;
+            Types = types;
         }
 
         public string ToFullString()
-            => $"ConditionalBranch [Type: {Type}, Source Type: {SourceType}, Target: {Segment.Name}, Else {ElseSegment.Name}]";
+            => $"ConditionalBranch [Source Type: {SourceType}, Target: {Segment.Name}, Else {ElseSegment.Name}]";
     }
 
     public class Call : IOperation

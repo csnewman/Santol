@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using LLVMSharp;
 
 namespace Santol
 {
@@ -10,9 +12,26 @@ namespace Santol
             AssemblyLoader loader = new AssemblyLoader();
             IList<ClassDefinition> classes = loader.Load("TestOS.exe");
 
+
+            //Find target
+            LLVM.InitializeAllTargetInfos();
+            LLVM.InitializeAllTargets();
+            LLVM.InitializeAllTargetMCs();
+            LLVM.InitializeAllAsmParsers();
+            LLVM.InitializeAllAsmPrinters();
+
+            LLVMPassManagerBuilderRef passManagerBuilderRef = LLVM.PassManagerBuilderCreate();
+            LLVM.PassManagerBuilderSetOptLevel(passManagerBuilderRef, 3);
+            LLVMPassManagerRef passManagerRef = LLVM.CreatePassManager();
+            LLVM.PassManagerBuilderPopulateModulePassManager(passManagerBuilderRef, passManagerRef);
+
+            string target = "i386-pc-none-elf";
+            Console.WriteLine("Current Platform: " + Marshal.PtrToStringAnsi((IntPtr)LLVM.GetDefaultTargetTriple()));
+            Console.WriteLine("Target Platform: " + target);
+
             foreach (ClassDefinition classDefinition in classes)
             {
-                CodeGenerator generator = new CodeGenerator();
+                CodeGenerator generator = new CodeGenerator(target, passManagerRef);
                 generator.GenerateClass(classDefinition);
             }
 

@@ -178,8 +178,9 @@ namespace Santol
                     case Code.Br:
                     {
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
-                        segment.AddCaller(this, typeStack.ToArray());
-                        Operations.Add(new Branch(segment));
+                        TypeReference[] types = typeStack.ToArray();
+                        segment.AddCaller(this, types);
+                        Operations.Add(new Branch(segment, types));
                         return;
                     }
                     case Code.Brtrue:
@@ -190,7 +191,7 @@ namespace Santol
                         TypeReference[] stack = typeStack.ToArray();
                         segment.AddCaller(this, stack);
                         elseSegment.AddCaller(this, stack);
-                        Operations.Add(new ConditionalBranch(segment, elseSegment, ConditionalBranch.Types.True, v1));
+                        Operations.Add(new ConditionalBranch(segment, elseSegment, v1, stack));
                         return;
                     }
                     case Code.Ret:
