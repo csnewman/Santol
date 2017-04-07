@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Santol.Generator;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
-namespace Santol
+namespace Santol.CIL
 {
     public class AssemblyLoader
     {
@@ -23,7 +24,7 @@ namespace Santol
                 Console.WriteLine("Type "+type+" ("+type.GetType()+")");
                 Console.WriteLine($"{type.MetadataType}  {type.Attributes}   {type.ClassSize}  {type.IsEnum} ");
 
-                ClassDefinition @class = new ClassDefinition(type.Name, type.Namespace, type.FullName);
+                ClassDefinition @class = new ClassDefinition(type.Name, type.Namespace, type.FullName, assembly.MainModule);
 
                 foreach (MMethodDefinition method in type.Methods)
                 {

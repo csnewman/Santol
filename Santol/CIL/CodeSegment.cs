@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Santol.Operations;
+using Convert = Santol.Operations.Convert;
+using MethodDefinition = Santol.CIL.MethodDefinition;
 
-namespace Santol
+namespace Santol.CIL
 {
     public class CodeSegment
     {

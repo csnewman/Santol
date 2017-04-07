@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Santol.Generator;
+using Santol.Operations;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
-namespace Santol
+namespace Santol.CIL
 {
     public class MethodDefinition
     {
@@ -117,7 +119,7 @@ namespace Santol
                 }
             }
 
-            //Add first instruction if missing
+            //AddInts first instruction if missing
             Instruction firstInst = Body.Instructions.Count > 0 ? Body.Instructions[0] : null;
             if (firstInst != null && !jumpDestinations.Contains(firstInst))
                 jumpDestinations.Add(firstInst);

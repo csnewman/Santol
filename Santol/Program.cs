@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using LLVMSharp;
+using Santol.CIL;
+using Santol.Generator;
 
 namespace Santol
 {
@@ -31,7 +33,7 @@ namespace Santol
 
             foreach (ClassDefinition classDefinition in classes)
             {
-                CodeGenerator generator = new CodeGenerator(target, passManagerRef);
+                ClassGenerator generator = new ClassGenerator(target, passManagerRef);
                 generator.GenerateClass(classDefinition);
             }
 
