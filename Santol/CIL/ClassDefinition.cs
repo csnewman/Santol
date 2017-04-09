@@ -3,7 +3,7 @@ using Mono.Cecil;
 
 namespace Santol.CIL
 {
-    public class ClassDefinition
+    public class ClassDefinition : ITypeDefinition
     {
         public string Name { get; }
         public string Namespace { get; }

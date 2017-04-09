@@ -12,7 +12,7 @@ namespace Santol
         static void Main(string[] args)
         {
             AssemblyLoader loader = new AssemblyLoader();
-            IList<ClassDefinition> classes = loader.Load("TestOS.exe");
+            IDictionary<string, ITypeDefinition> types = loader.Load("TestOS.exe");
 
 
             //Find target
@@ -31,10 +31,10 @@ namespace Santol
             Console.WriteLine("Current Platform: " + Marshal.PtrToStringAnsi((IntPtr)LLVM.GetDefaultTargetTriple()));
             Console.WriteLine("Target Platform: " + target);
 
-            foreach (ClassDefinition classDefinition in classes)
+            foreach (ITypeDefinition typeDefinition in types.Values)
             {
-                ClassGenerator generator = new ClassGenerator(target, passManagerRef);
-                generator.GenerateClass(classDefinition);
+                ModuleGenerator generator = new ModuleGenerator(target, passManagerRef, types);
+                generator.GenerateType(typeDefinition);
             }
 
             Console.ReadLine();

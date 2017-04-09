@@ -153,7 +153,24 @@ namespace Santol.CIL
                         Operations.Add(opp);
                         break;
                     }
-
+                    case Code.Shl:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Numeric(Numeric.Operations.ShiftLeft, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
+                    case Code.Or:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Numeric(Numeric.Operations.Or, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Clt:
                     {
                         TypeReference v2 = typeStack.Pop();

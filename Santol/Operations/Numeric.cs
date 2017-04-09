@@ -9,7 +9,7 @@ namespace Santol.Operations
     {
         public enum Operations
         {
-            Add
+            Add, ShiftLeft, Or
         }
 
         public TypeReference Lhs { get; }
@@ -30,13 +30,26 @@ namespace Santol.Operations
             LLVMValueRef v2 = stack.Pop();
             LLVMValueRef v1 = stack.Pop();
 
-            if (Lhs != Rhs)
+            TypeReference lhs = Lhs, rhs = Rhs;
+
+            if (cgen.IsEnum(lhs))
+                lhs = cgen.GetEnumType(lhs);
+            if (cgen.IsEnum(rhs))
+                rhs = cgen.GetEnumType(rhs);
+
+            if (lhs != rhs)
                 throw new NotImplementedException("Numeric ops on different types not implemented yet");
 
             switch (Operation)
             {
                 case Operations.Add:
-                    stack.PushConverted(fgen.AddInts(v1, v2), Lhs, ResultType);
+                    stack.PushConverted(fgen.AddInts(v1, v2), lhs, ResultType);
+                    break;
+                case Operations.ShiftLeft:
+                    stack.PushConverted(fgen.ShiftLeft(v1, v2), lhs, ResultType);
+                    break;
+                case Operations.Or:
+                    stack.PushConverted(fgen.Or(v1, v2), lhs, ResultType);
                     break;
                 default:
                     throw new NotImplementedException("Unknown operation " + Operation);

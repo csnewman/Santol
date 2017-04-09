@@ -10,31 +10,59 @@ namespace Santol.CIL
 {
     public class AssemblyLoader
     {
-        public IList<ClassDefinition> Load(string file)
+        public IDictionary<string, ITypeDefinition> Load(string file)
         {
             AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(file);
             TypeSystem typeSystem = assembly.MainModule.TypeSystem;
 
-            IList<ClassDefinition> classes = new List<ClassDefinition>();
+            IDictionary<string, ITypeDefinition> types = new Dictionary<string, ITypeDefinition>();
 
             foreach (TypeDefinition type in assembly.MainModule.Types)
             {
                 if (type.Name.Equals("<Module>")) continue;
 
-                Console.WriteLine("Type "+type+" ("+type.GetType()+")");
+                Console.WriteLine("Type " + type + " (" + type.GetType() + ")");
                 Console.WriteLine($"{type.MetadataType}  {type.Attributes}   {type.ClassSize}  {type.IsEnum} ");
 
-                ClassDefinition @class = new ClassDefinition(type.Name, type.Namespace, type.FullName, assembly.MainModule);
+                Console.WriteLine(
+                    $"Class: {type.IsClass}  Enum: {type.IsEnum}  Value Type: {type.IsValueType}  Interface: {type.IsInterface}  ");
 
-                foreach (MMethodDefinition method in type.Methods)
+                if (type.IsEnum)
                 {
-                    LoadMethod(@class, method, typeSystem);
+                    TypeReference underType = type.GetEnumUnderlyingType();
+                    IDictionary<string, object> values = new Dictionary<string, object>();
+                    foreach (FieldDefinition field in type.Fields)
+                    {
+                        if (field.Name.Equals("value__"))
+                            continue;
+                        if (!field.IsStatic || !field.HasConstant)
+                            throw new NotSupportedException("Unknown field purpose " + field);
+                        if (field.FieldType != type)
+                            throw new NotSupportedException("Unknown field purpose, different type! " + field);
+                        values[field.Name] = field.Constant;
+                    }
+                    types.Add(type.FullName, new EnumDefinition(type.Name, type.Namespace, type.FullName,
+                        assembly.MainModule, underType, values));
                 }
+                else if (type.IsValueType)
+                {
+                    throw new NotImplementedException("Structs are not supported");
+                }
+                else
+                {
+                    ClassDefinition @class = new ClassDefinition(type.Name, type.Namespace, type.FullName,
+                        assembly.MainModule);
 
-                classes.Add(@class);
+                    foreach (MMethodDefinition method in type.Methods)
+                    {
+                        LoadMethod(@class, method, typeSystem);
+                    }
+
+                    types.Add(type.FullName, @class);
+                }
             }
 
-            return classes;
+            return types;
         }
 
         private void LoadMethod(ClassDefinition @class, MMethodDefinition methodD, TypeSystem typeSystem)

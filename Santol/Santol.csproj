@@ -122,7 +122,9 @@
   <ItemGroup>
     <Compile Include="CIL\AssemblyLoader.cs" />
     <Compile Include="CIL\ClassDefinition.cs" />
-    <Compile Include="Generator\ClassGenerator.cs" />
+    <Compile Include="CIL\EnumDefinition.cs" />
+    <Compile Include="CIL\ITypeDefinition.cs" />
+    <Compile Include="Generator\ModuleGenerator.cs" />
     <Compile Include="CIL\CodeSegment.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Generator\CodeGenerator.cs" />

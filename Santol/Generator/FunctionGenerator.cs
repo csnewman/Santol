@@ -136,6 +136,16 @@ namespace Santol.Generator
             return LLVM.BuildAdd(_cgen.Builder, v1, v2, "");
         }
 
+        public LLVMValueRef ShiftLeft(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildShl(_cgen.Builder, v1, v2, "");
+        }
+
+        public LLVMValueRef Or(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildOr(_cgen.Builder, v1, v2, "");
+        }
+
         public LLVMValueRef CompareInts(LLVMIntPredicate op, LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildICmp(_cgen.Builder, op, v1, v2, "");

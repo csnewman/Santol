@@ -14,24 +14,65 @@ using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
 namespace Santol.Generator
 {
-    public class ClassGenerator
+    public class ModuleGenerator
     {
         private TypeSystem _typeSystem;
         private CodeGenerator _generator;
         private string _target;
         private LLVMPassManagerRef _passManagerRef;
+        private IDictionary<string, ITypeDefinition> _types;
 
-        public ClassGenerator(string target, LLVMPassManagerRef passManagerRef)
+        public ModuleGenerator(string target, LLVMPassManagerRef passManagerRef, IDictionary<string, ITypeDefinition> types)
         {
             _target = target;
             _passManagerRef = passManagerRef;
+            _types = types;
+        }
+
+        public void GenerateType(ITypeDefinition type)
+        {
+            if (type is ClassDefinition)
+            {
+                GenerateClass((ClassDefinition) type);
+            }
+            else if (type is EnumDefinition)
+            {
+                GenerateEnum((EnumDefinition) type);
+            }
+            else
+            {
+                throw new NotImplementedException("Unknown type " + type);
+            }
+        }
+
+        public void GenerateEnum(EnumDefinition @enum)
+        {
+            Console.WriteLine($"Generating {@enum.FullName}");
+            _generator = new CodeGenerator(@enum.FullName.Replace('.', '_'), _target, @enum.Module.TypeSystem, _types);
+
+            LLVMTypeRef type = _generator.ConvertType(@enum.Type);
+            foreach (KeyValuePair<string, object> pair in @enum.Values)
+            {
+                _generator.SetConstant(@enum.FullName.Replace('.', '_') + "____" + pair.Key, type,
+                    _generator.GeneratePrimitiveConstant(@enum.Type, pair.Value));
+            }
+
+            Console.WriteLine("\n\nDump:");
+            _generator.Dump();
+
+            _generator.Optimise(_passManagerRef);
+
+            Console.WriteLine("\n\nDump:");
+            _generator.Dump();
+
+            _generator.Compile();
         }
 
         public void GenerateClass(ClassDefinition @class)
         {
             Console.WriteLine($"Generating {@class.FullName}");
 
-            _generator = new CodeGenerator(@class.FullName.Replace('.', '_'), _target, @class.Module.TypeSystem);
+            _generator = new CodeGenerator(@class.FullName.Replace('.', '_'), _target, @class.Module.TypeSystem, _types);
 
             foreach (MethodDefinition methodDefinition in @class.Methods)
                 _generator.DefineFunction(methodDefinition.Definition);
@@ -55,10 +96,6 @@ namespace Santol.Generator
 
         public void GenerateMethod(MethodDefinition method)
         {
-            //            IDictionary<CodeSegment, LLVMBasicBlockRef> segmentBlocks = new Dictionary<CodeSegment, LLVMBasicBlockRef>();
-            //            IDictionary<CodeSegment, LLVMValueRef[]> segmentPhis = new Dictionary<CodeSegment, LLVMValueRef[]>();
-
-
             MMethodDefinition definition = method.Definition;
             FunctionGenerator fgen = _generator.GetFunction(definition);
 
