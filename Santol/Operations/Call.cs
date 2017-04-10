@@ -20,8 +20,8 @@ namespace Santol.Operations
         {
             LLVMValueRef[] args = new LLVMValueRef[ArgTypes.Length];
             for (int i = 0; i < args.Length; i++)
-                args[args.Length - 1 - i] = stack.PopConverted(ArgTypes[i], Definition.Parameters[args.Length - 1 - i].ParameterType);
-
+                args[args.Length - 1 - i] = stack.PopConverted(ArgTypes[args.Length - 1 -  i], Definition.Parameters[args.Length - 1 -  i].ParameterType);
+            
             LLVMValueRef? val = fgen.GenerateCall(Definition, ArgTypes, args);
             if (val.HasValue)
                 stack.Push(val.Value);

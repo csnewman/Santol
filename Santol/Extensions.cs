@@ -29,6 +29,11 @@ namespace Santol
                    definition.ReturnType.GetName();
         }
 
+        public static string GetName(this FieldReference reference)
+        {
+            return reference.DeclaringType.GetName() + "____" + reference.Name + "___" + reference.FieldType.GetName();
+        }
+
         public static void AddOpt<T>(this IList<T> list, T value)
         {
             if (!list.Contains(value))

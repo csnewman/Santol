@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
-using Santol.CIL;
+using Santol.Loader;
 using MethodDefinition = Mono.Cecil.MethodDefinition;
 
 namespace Santol.Generator
@@ -19,11 +19,11 @@ namespace Santol.Generator
         public LLVMBuilderRef Builder { get; }
         public TypeSystem TypeSystem { get; }
         private IDictionary<MethodDefinition, FunctionGenerator> _functions;
-        private IDictionary<string, LLVMValueRef> _globalRefs;
-        private IDictionary<string, ITypeDefinition> _types;
+        private IDictionary<string, LLVMValueRef> _globalRefs, _funcRefs;
+        private IDictionary<string, LoadedType> _types;
 
         public CodeGenerator(string moduleName, string target, TypeSystem typeSystem,
-            IDictionary<string, ITypeDefinition> types)
+            IDictionary<string, LoadedType> types)
         {
             _moduleName = moduleName;
             _target = target;
@@ -34,21 +34,30 @@ namespace Santol.Generator
             TypeSystem = typeSystem;
             _functions = new Dictionary<MethodDefinition, FunctionGenerator>();
             _globalRefs = new Dictionary<string, LLVMValueRef>();
+            _funcRefs = new Dictionary<string, LLVMValueRef>();
             _types = types;
         }
 
-        public void DefineFunction(MethodDefinition definition)
+        public FunctionGenerator DefineFunction(MethodDefinition definition)
         {
-            LLVMTypeRef functionType = GetFunctionType(definition);
-            LLVMValueRef functionRef = LLVM.AddFunction(Module, definition.GetName(), functionType);
+            LLVMValueRef functionRef = GetFunctionRef(definition);
             LLVM.SetLinkage(functionRef, LLVMLinkage.LLVMExternalLinkage);
-
-            _functions[definition] = new FunctionGenerator(this, definition, functionRef);
+            FunctionGenerator func = new FunctionGenerator(this, definition, functionRef);
+            _functions[definition] = func;
+            return func;
         }
-
-        public FunctionGenerator GetFunction(MethodDefinition definition)
+        
+        public LLVMValueRef GetFunctionRef(MethodDefinition definition)
         {
-            return _functions[definition];
+            string name = definition.GetName();
+            if (_funcRefs.ContainsKey(name))
+                return _funcRefs[name];
+
+            LLVMTypeRef functionType = GetFunctionType(definition);
+            LLVMValueRef @ref = LLVM.AddFunction(Module, definition.GetName(), functionType);
+            LLVM.SetLinkage(@ref, LLVMLinkage.LLVMAvailableExternallyLinkage);
+            _funcRefs[name] = @ref;
+            return @ref;
         }
 
         public LLVMTypeRef GetFunctionType(MethodDefinition definition)
@@ -61,7 +70,15 @@ namespace Santol.Generator
 
         public void SetConstant(string name, LLVMTypeRef type, LLVMValueRef value)
         {
-            LLVM.SetInitializer(GetGlobal(name, type), value);
+            LLVMValueRef glob = GetGlobal(name, type);
+            LLVM.SetInitializer(glob, value);
+            LLVM.SetGlobalConstant(glob, true);
+        }
+
+        public void SetGlobal(string name, LLVMTypeRef type, LLVMValueRef value)
+        {
+            LLVMValueRef glob = GetGlobal(name, type);
+            LLVM.SetInitializer(glob, value);
         }
 
         public LLVMValueRef GetGlobal(string name, LLVMTypeRef type)
@@ -116,9 +133,9 @@ namespace Santol.Generator
 
                 case MetadataType.ValueType:
                 {
-                    ITypeDefinition def = _types[reference.FullName];
-                    if (def is EnumDefinition)
-                        return ConvertType(((EnumDefinition) def).Type);
+                    LoadedType def = _types[reference.FullName];
+                    if (def.IsEnum)
+                        return ConvertType(def.EnumType);
                     throw new NotImplementedException("Unable to handle structs");
                 }
                 default:
@@ -134,6 +151,14 @@ namespace Santol.Generator
 
         public LLVMValueRef GeneratePrimitiveConstant(TypeReference typeReference, object value)
         {
+            if (typeReference.MetadataType == MetadataType.ValueType)
+            {
+                LoadedType def = Resolve(typeReference);
+                if (def.IsEnum)
+                    return GeneratePrimitiveConstant(def.EnumType, value);
+                throw new NotImplementedException("Unable to handle structs");
+            }
+
             LLVMTypeRef type = ConvertType(typeReference);
 
             switch (typeReference.MetadataType)
@@ -174,22 +199,21 @@ namespace Santol.Generator
                 case MetadataType.UIntPtr:
                     throw new NotImplementedException("UIntPtr data " + value.GetType() + "=" + value);
                 default:
-                    throw new NotImplementedException("Unknown type! " + typeReference);
+                    throw new NotImplementedException("Unknown type! " + typeReference + " (" + value + ")");
             }
         }
 
-        
         public bool IsEnum(TypeReference @ref)
         {
-            return _types.ContainsKey(@ref.FullName) && _types[@ref.FullName] is EnumDefinition;
+            return _types.ContainsKey(@ref.FullName) && _types[@ref.FullName].IsEnum;
         }
 
         public TypeReference GetEnumType(TypeReference @ref)
         {
-            return IsEnum(@ref) ? ((EnumDefinition) Resolve(@ref)).Type : null;
+            return IsEnum(@ref) ? Resolve(@ref).EnumType : null;
         }
 
-        public ITypeDefinition Resolve(TypeReference @ref)
+        public LoadedType Resolve(TypeReference @ref)
         {
             return _types.ContainsKey(@ref.FullName) ? _types[@ref.FullName] : null;
         }
@@ -201,17 +225,17 @@ namespace Santol.Generator
 
             if (sourceType.MetadataType == MetadataType.ValueType)
             {
-                ITypeDefinition def = Resolve(sourceType);
-                if (def is EnumDefinition)
-                    return GenerateConversion(((EnumDefinition) def).Type, destType, value);
+                LoadedType def = Resolve(sourceType);
+                if (def.IsEnum)
+                    return GenerateConversion(def.EnumType, destType, value);
                 throw new NotImplementedException("Unable to handle structs");
             }
 
             if (destType.MetadataType == MetadataType.ValueType)
             {
-                ITypeDefinition def = Resolve(destType);
-                if (def is EnumDefinition)
-                    return GenerateConversion(sourceType, ((EnumDefinition)def).Type, value);
+                LoadedType def = Resolve(destType);
+                if (def.IsEnum)
+                    return GenerateConversion(sourceType, def.EnumType, value);
                 throw new NotImplementedException("Unable to handle structs");
             }
 
@@ -235,12 +259,23 @@ namespace Santol.Generator
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
 
+                case MetadataType.UInt16:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.Char:
+                            //TODO: Check
+                            return value;
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
                 case MetadataType.Int32:
                     switch (destType.MetadataType)
                     {
                         case MetadataType.Byte:
                         case MetadataType.Boolean:
                         case MetadataType.Char:
+                        case MetadataType.UInt16:
                             return LLVM.BuildTrunc(Builder, value, ConvertType(destType), "");
                         case MetadataType.IntPtr:
                             return LLVM.BuildIntToPtr(Builder, value, ConvertType(destType), "");

@@ -5,13 +5,12 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Santol.Operations;
 using Convert = Santol.Operations.Convert;
-using MethodDefinition = Santol.CIL.MethodDefinition;
 
-namespace Santol.CIL
+namespace Santol.Loader
 {
     public class CodeSegment
     {
-        public MethodDefinition Method { get; }
+        public MethodInfo Method { get; }
         public string Name { get; }
         public IList<Instruction> Instructions { get; }
         public bool IsEndPoint => Instructions.Last().OpCode.FlowControl == FlowControl.Return;
@@ -21,7 +20,7 @@ namespace Santol.CIL
         public IList<CodeSegment> Callers { get; }
         public IList<IOperation> Operations { get; }
 
-        public CodeSegment(MethodDefinition method, string name)
+        public CodeSegment(MethodInfo method, string name)
         {
             Method = method;
             Name = name;
@@ -43,9 +42,19 @@ namespace Santol.CIL
             {
                 Incoming = types;
             }
-            else if (!types.SequenceEqual(Incoming) || types.Length != Incoming.Length)
+            else if (types.Length != Incoming.Length)
             {
-                throw new NotSupportedException("Unable to handle different incoming types!");
+                throw new NotSupportedException("Unable to handle a different number of incoming types!");
+            }
+            else if (!types.SequenceEqual(Incoming))
+            {
+                for (int i = 0; i < Incoming.Length; i++)
+                {
+                    if (Incoming[i].Equals(types[i]))
+                        continue;
+
+                    Incoming[i] = TypeHelper.GetSimplestType(Incoming[i], types[i]);
+                }
             }
         }
 
@@ -112,10 +121,17 @@ namespace Santol.CIL
                         Operations.Add(opp);
                         break;
                     }
+                    case Code.Ldsfld:
+                    {
+                        IOperation opp = new LoadStatic((FieldReference) instruction.Operand);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Stloc:
                     {
                         TypeReference v1 = typeStack.Pop();
-                        Operations.Add(new StoreLocal((Mono.Cecil.Cil.VariableDefinition) instruction.Operand, v1));
+                        Operations.Add(new StoreLocal((VariableDefinition) instruction.Operand, v1));
                         break;
                     }
                     case Code.Stind_I1:
@@ -125,10 +141,24 @@ namespace Santol.CIL
                         Operations.Add(new StoreDirect(typeSystem.Byte, v2, v1));
                         break;
                     }
+                    case Code.Stsfld:
+                    {
+                        TypeReference v1 = typeStack.Pop();
+                        Operations.Add(new StoreStatic((FieldReference) instruction.Operand, v1));
+                        break;
+                    }
                     case Code.Conv_I:
                     {
                         TypeReference v1 = typeStack.Pop();
                         IOperation opp = new Convert(v1, typeSystem.IntPtr);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
+                    case Code.Conv_U:
+                    {
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Convert(v1, typeSystem.UIntPtr);
                         typeStack.Push(opp.ResultType);
                         Operations.Add(opp);
                         break;
@@ -141,6 +171,14 @@ namespace Santol.CIL
                         Operations.Add(opp);
                         break;
                     }
+                    case Code.Conv_U2:
+                    {
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Convert(v1, typeSystem.UInt16);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Add:
                     {
                         TypeReference v2 = typeStack.Pop();
@@ -149,6 +187,18 @@ namespace Santol.CIL
                             throw new NotSupportedException("Can not add two different types!");
 
                         IOperation opp = new Numeric(Numeric.Operations.Add, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
+                    case Code.Mul:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        if (v1 != v2)
+                            throw new NotSupportedException("Can not add two different types!");
+
+                        IOperation opp = new Numeric(Numeric.Operations.Multiply, v1, v2, v1);
                         typeStack.Push(opp.ResultType);
                         Operations.Add(opp);
                         break;
@@ -180,6 +230,15 @@ namespace Santol.CIL
                         Operations.Add(opp);
                         break;
                     }
+                    case Code.Ceq:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.Equal, v1, v2);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Call:
                     {
                         Mono.Cecil.MethodDefinition method = (Mono.Cecil.MethodDefinition) instruction.Operand;
@@ -191,7 +250,8 @@ namespace Santol.CIL
                             types[types.Length - 1 - i] = typeStack.Pop();
 
                         IOperation opp = new Call(method, types);
-                        typeStack.Push(opp.ResultType);
+                        if (method.ReturnType.MetadataType != MetadataType.Void)
+                            typeStack.Push(opp.ResultType);
                         Operations.Add(opp);
                         break;
                     }
@@ -212,6 +272,48 @@ namespace Santol.CIL
                         segment.AddCaller(this, stack);
                         elseSegment.AddCaller(this, stack);
                         Operations.Add(new ConditionalBranch(segment, elseSegment, v1, stack));
+                        return;
+                    }
+                    case Code.Brfalse:
+                    {
+                        TypeReference v1 = typeStack.Pop();
+                        CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
+                        CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
+                        TypeReference[] stack = typeStack.ToArray();
+                        segment.AddCaller(this, stack);
+                        elseSegment.AddCaller(this, stack);
+                        //TODO: Check whether this is valid in all cases
+                        Operations.Add(new ConditionalBranch(elseSegment, segment, v1, stack));
+                        return;
+                    }
+                    case Code.Blt:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.LessThan, v1, v2);
+                        Operations.Add(opp);
+
+                        CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
+                        CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
+                        TypeReference[] stack = typeStack.ToArray();
+                        segment.AddCaller(this, stack);
+                        elseSegment.AddCaller(this, stack);
+                        Operations.Add(new ConditionalBranch(segment, elseSegment, opp.ResultType, stack));
+                        return;
+                    }
+                    case Code.Bge:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.GreaterThanOrEqual, v1, v2);
+                        Operations.Add(opp);
+
+                        CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
+                        CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
+                        TypeReference[] stack = typeStack.ToArray();
+                        segment.AddCaller(this, stack);
+                        elseSegment.AddCaller(this, stack);
+                        Operations.Add(new ConditionalBranch(segment, elseSegment, opp.ResultType, stack));
                         return;
                     }
                     case Code.Ret:

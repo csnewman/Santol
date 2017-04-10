@@ -1,7 +1,7 @@
 using System;
 using LLVMSharp;
 using Mono.Cecil;
-using Santol.CIL;
+using Santol.Loader;
 using Santol.Generator;
 
 namespace Santol.Operations

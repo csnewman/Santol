@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using LLVMSharp;
 using Mono.Cecil;
-using Santol.CIL;
+using Santol.Loader;
 using Santol.Operations;
 
 namespace Santol.Generator
@@ -121,6 +121,11 @@ namespace Santol.Generator
             return LLVM.BuildLoad(_cgen.Builder, Locals[index], "");
         }
 
+        public LLVMValueRef LoadDirect(LLVMValueRef address)
+        {
+            return LLVM.BuildLoad(_cgen.Builder, address, "");
+        }
+
         public void StoreLocal(int index, LLVMValueRef value)
         {
             LLVM.BuildStore(_cgen.Builder, value, Locals[index]);
@@ -130,10 +135,15 @@ namespace Santol.Generator
         {
             LLVM.BuildStore(_cgen.Builder, value, address);
         }
-
+        
         public LLVMValueRef AddInts(LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildAdd(_cgen.Builder, v1, v2, "");
+        }
+
+        public LLVMValueRef MultiplyInts(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildMul(_cgen.Builder, v1, v2, "");
         }
 
         public LLVMValueRef ShiftLeft(LLVMValueRef v1, LLVMValueRef v2)
@@ -157,7 +167,7 @@ namespace Santol.Generator
             if (method.HasThis)
                 throw new NotImplementedException("Instance methods not supported");
 
-            LLVMValueRef func = _cgen.GetFunction(method).FunctionRef;
+            LLVMValueRef func = _cgen.GetFunctionRef(method);
 
             LLVMValueRef[] convArgs = new LLVMValueRef[args.Length];
             for (int i = 0; i < args.Length; i++)

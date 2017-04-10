@@ -5,10 +5,9 @@ using System.Runtime.InteropServices;
 using LLVMSharp;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Santol.CIL;
+using Santol.Loader;
 using Santol.Operations;
 using Convert = Santol.Operations.Convert;
-using MethodDefinition = Santol.CIL.MethodDefinition;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
 
@@ -20,84 +19,46 @@ namespace Santol.Generator
         private CodeGenerator _generator;
         private string _target;
         private LLVMPassManagerRef _passManagerRef;
-        private IDictionary<string, ITypeDefinition> _types;
+        private IDictionary<string, LoadedType> _types;
 
-        public ModuleGenerator(string target, LLVMPassManagerRef passManagerRef, IDictionary<string, ITypeDefinition> types)
+        public ModuleGenerator(string target, LLVMPassManagerRef passManagerRef,
+            IDictionary<string, LoadedType> types)
         {
             _target = target;
             _passManagerRef = passManagerRef;
             _types = types;
         }
 
-        public void GenerateType(ITypeDefinition type)
+        public void GenerateType(LoadedType type)
         {
-            if (type is ClassDefinition)
-            {
-                GenerateClass((ClassDefinition) type);
-            }
-            else if (type is EnumDefinition)
-            {
-                GenerateEnum((EnumDefinition) type);
-            }
-            else
-            {
-                throw new NotImplementedException("Unknown type " + type);
-            }
-        }
+            Console.WriteLine($"Generating {type.Definition.FullName}");
 
-        public void GenerateEnum(EnumDefinition @enum)
-        {
-            Console.WriteLine($"Generating {@enum.FullName}");
-            _generator = new CodeGenerator(@enum.FullName.Replace('.', '_'), _target, @enum.Module.TypeSystem, _types);
+            _generator = new CodeGenerator(type.Definition.GetName(), _target,
+                type.Definition.Module.TypeSystem, _types);
 
-            LLVMTypeRef type = _generator.ConvertType(@enum.Type);
-            foreach (KeyValuePair<string, object> pair in @enum.Values)
+            foreach (FieldDefinition field in type.ConstantFields)
             {
-                _generator.SetConstant(@enum.FullName.Replace('.', '_') + "____" + pair.Key, type,
-                    _generator.GeneratePrimitiveConstant(@enum.Type, pair.Value));
+                _generator.SetConstant(field.GetName(), _generator.ConvertType(field.FieldType),
+                    _generator.GeneratePrimitiveConstant(field.FieldType, field.Constant));
             }
 
-            Console.WriteLine("\n\nDump:");
-            _generator.Dump();
-
-            _generator.Optimise(_passManagerRef);
-
-            Console.WriteLine("\n\nDump:");
-            _generator.Dump();
-
-            _generator.Compile();
-        }
-
-        public void GenerateClass(ClassDefinition @class)
-        {
-            Console.WriteLine($"Generating {@class.FullName}");
-
-            _generator = new CodeGenerator(@class.FullName.Replace('.', '_'), _target, @class.Module.TypeSystem, _types);
-
-            foreach (MethodDefinition methodDefinition in @class.Methods)
-                _generator.DefineFunction(methodDefinition.Definition);
-
-
-            foreach (MethodDefinition methodDefinition in @class.Methods)
+            foreach (FieldDefinition field in type.StaticFields)
             {
+                LLVMTypeRef ftype = _generator.ConvertType(field.FieldType);
+                _generator.SetGlobal(field.GetName(), ftype, LLVM.ConstNull(ftype));
+            }
+
+            foreach (MethodInfo methodDefinition in type.StaticMethods)
                 GenerateMethod(methodDefinition);
-            }
-
-            Console.WriteLine("\n\nDump:");
-            _generator.Dump();
-
+            
             _generator.Optimise(_passManagerRef);
-
-            Console.WriteLine("\n\nDump:");
-            _generator.Dump();
-
             _generator.Compile();
         }
 
-        public void GenerateMethod(MethodDefinition method)
+        public void GenerateMethod(MethodInfo method)
         {
             MMethodDefinition definition = method.Definition;
-            FunctionGenerator fgen = _generator.GetFunction(definition);
+            FunctionGenerator fgen = _generator.DefineFunction(definition);
 
             //Allocate locals
             fgen.CreateBlock("entry", null);
@@ -129,9 +90,6 @@ namespace Santol.Generator
                 foreach (IOperation operation in segment.Operations)
                     operation.Generate(_generator, fgen, builder);
             }
-
-
-            Console.WriteLine("> " + method.Definition.GetName());
         }
     }
 }

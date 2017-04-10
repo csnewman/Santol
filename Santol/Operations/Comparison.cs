@@ -9,7 +9,9 @@ namespace Santol.Operations
     {
         public enum Operations
         {
-            LessThan
+            Equal,
+            LessThan,
+            GreaterThanOrEqual
         }
 
         public TypeReference Lhs { get; }
@@ -28,22 +30,31 @@ namespace Santol.Operations
 
         public void Generate(CodeGenerator cgen, FunctionGenerator fgen, StackBuilder stack)
         {
-            LLVMValueRef v2 = stack.Pop();
-            LLVMValueRef v1 = stack.Pop();
+            TypeReference target = TypeHelper.GetMostComplexType(Lhs, Rhs);
 
-            if (Lhs != Rhs)
-                throw new NotImplementedException("Comparison ops on different types not implemented yet");
+            LLVMValueRef v2 = stack.PopConverted(Rhs, target);
+            LLVMValueRef v1 = stack.PopConverted(Lhs, target);
+
 
             switch (Operation)
             {
                 case Operations.LessThan:
-                    stack.PushConverted(fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, v1, v2), cgen.TypeSystem.Boolean, ResultType);
+                    stack.PushConverted(fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, v1, v2), cgen.TypeSystem.Boolean,
+                        ResultType);
+                    break;
+                case Operations.GreaterThanOrEqual:
+                    stack.PushConverted(fgen.CompareInts(LLVMIntPredicate.LLVMIntSGE, v1, v2), cgen.TypeSystem.Boolean,
+                        ResultType);
+                    break;
+                case Operations.Equal:
+                    stack.PushConverted(fgen.CompareInts(LLVMIntPredicate.LLVMIntEQ, v1, v2), cgen.TypeSystem.Boolean,
+                        ResultType);
                     break;
                 default:
                     throw new NotImplementedException("Unknown operation " + Operation);
             }
         }
-        
+
         public string ToFullString()
             => $"Comparison [Operation: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
     }

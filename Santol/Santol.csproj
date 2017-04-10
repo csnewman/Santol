@@ -120,33 +120,34 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CIL\AssemblyLoader.cs" />
-    <Compile Include="CIL\ClassDefinition.cs" />
-    <Compile Include="CIL\EnumDefinition.cs" />
-    <Compile Include="CIL\ITypeDefinition.cs" />
+    <Compile Include="Loader\AssemblyLoader.cs" />
     <Compile Include="Generator\ModuleGenerator.cs" />
-    <Compile Include="CIL\CodeSegment.cs" />
+    <Compile Include="Loader\CodeSegment.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Generator\CodeGenerator.cs" />
     <Compile Include="Generator\FunctionGenerator.cs" />
     <Compile Include="Generator\StackBuilder.cs" />
+    <Compile Include="Loader\LoadedType.cs" />
     <Compile Include="Operations\Branch.cs" />
     <Compile Include="Operations\Call.cs" />
     <Compile Include="Operations\Comparison.cs" />
     <Compile Include="Operations\ConditionalBranch.cs" />
     <Compile Include="Operations\Convert.cs" />
     <Compile Include="Operations\IOperation.cs" />
-    <Compile Include="CIL\MethodDefinition.cs" />
+    <Compile Include="Loader\MethodDefinition.cs" />
     <Compile Include="Operations\LoadArg.cs" />
     <Compile Include="Operations\LoadLocal.cs" />
     <Compile Include="Operations\LoadPrimitiveConstant.cs" />
+    <Compile Include="Operations\LoadStatic.cs" />
     <Compile Include="Operations\Numeric.cs" />
     <Compile Include="Operations\LoadNullConstant.cs" />
     <Compile Include="Operations\Return.cs" />
     <Compile Include="Operations\StoreDirect.cs" />
     <Compile Include="Operations\StoreLocal.cs" />
+    <Compile Include="Operations\StoreStatic.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TypeHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

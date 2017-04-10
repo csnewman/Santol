@@ -7,9 +7,9 @@ using Santol.Generator;
 using Santol.Operations;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
-namespace Santol.CIL
+namespace Santol.Loader
 {
-    public class MethodDefinition
+    public class MethodInfo
     {
         public string Name => Definition.Name;
         public MMethodDefinition Definition { get; }
@@ -18,7 +18,7 @@ namespace Santol.CIL
         public bool DoesReturn => Definition.ReturnType.MetadataType != MetadataType.Void;
         public IList<CodeSegment> Segments { get; set; }
 
-        public MethodDefinition(MMethodDefinition definition)
+        public MethodInfo(MMethodDefinition definition)
         {
             Definition = definition;
             Body = definition.Body;

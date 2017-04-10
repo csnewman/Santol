@@ -9,7 +9,7 @@ namespace Santol.Operations
     {
         public enum Operations
         {
-            Add, ShiftLeft, Or
+            Add, Multiply, ShiftLeft, Or
         }
 
         public TypeReference Lhs { get; }
@@ -44,6 +44,9 @@ namespace Santol.Operations
             {
                 case Operations.Add:
                     stack.PushConverted(fgen.AddInts(v1, v2), lhs, ResultType);
+                    break;
+                case Operations.Multiply:
+                    stack.PushConverted(fgen.MultiplyInts(v1, v2), lhs, ResultType);
                     break;
                 case Operations.ShiftLeft:
                     stack.PushConverted(fgen.ShiftLeft(v1, v2), lhs, ResultType);
