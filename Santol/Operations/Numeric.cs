@@ -9,7 +9,14 @@ namespace Santol.Operations
     {
         public enum Operations
         {
-            Add, Multiply, ShiftLeft, Or
+            Add,
+            Subtract,
+            Multiply,
+            Divide,
+            Remainder,
+            ShiftLeft,
+            Or,
+            XOr
         }
 
         public TypeReference Lhs { get; }
@@ -45,8 +52,17 @@ namespace Santol.Operations
                 case Operations.Add:
                     stack.PushConverted(fgen.AddInts(v1, v2), lhs, ResultType);
                     break;
+                case Operations.Subtract:
+                    stack.PushConverted(fgen.SubtractInts(v1, v2), lhs, ResultType);
+                    break;
                 case Operations.Multiply:
                     stack.PushConverted(fgen.MultiplyInts(v1, v2), lhs, ResultType);
+                    break;
+                case Operations.Divide:
+                    stack.PushConverted(fgen.DivideInts(v1, v2), lhs, ResultType);
+                    break;
+                case Operations.Remainder:
+                    stack.PushConverted(fgen.RemainderInts(v1, v2), lhs, ResultType);
                     break;
                 case Operations.ShiftLeft:
                     stack.PushConverted(fgen.ShiftLeft(v1, v2), lhs, ResultType);
@@ -54,11 +70,14 @@ namespace Santol.Operations
                 case Operations.Or:
                     stack.PushConverted(fgen.Or(v1, v2), lhs, ResultType);
                     break;
+                case Operations.XOr:
+                    stack.PushConverted(fgen.XOr(v1, v2), lhs, ResultType);
+                    break;
                 default:
                     throw new NotImplementedException("Unknown operation " + Operation);
             }
         }
-        
+
         public string ToFullString()
             => $"Numeric [Operation: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
     }

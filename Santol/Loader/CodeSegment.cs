@@ -128,6 +128,14 @@ namespace Santol.Loader
                         Operations.Add(opp);
                         break;
                     }
+                    case Code.Ldind_U1:
+                    {
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new LoadDirect(typeSystem.Byte, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Stloc:
                     {
                         TypeReference v1 = typeStack.Pop();
@@ -191,6 +199,18 @@ namespace Santol.Loader
                         Operations.Add(opp);
                         break;
                     }
+                    case Code.Sub:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        if (v1 != v2)
+                            throw new NotSupportedException("Can not add two different types!");
+
+                        IOperation opp = new Numeric(Numeric.Operations.Subtract, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Mul:
                     {
                         TypeReference v2 = typeStack.Pop();
@@ -199,6 +219,30 @@ namespace Santol.Loader
                             throw new NotSupportedException("Can not add two different types!");
 
                         IOperation opp = new Numeric(Numeric.Operations.Multiply, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
+                    case Code.Div:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        if (v1 != v2)
+                            throw new NotSupportedException("Can not add two different types!");
+
+                        IOperation opp = new Numeric(Numeric.Operations.Divide, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
+                    case Code.Rem:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        if (v1 != v2)
+                            throw new NotSupportedException("Can not add two different types!");
+
+                        IOperation opp = new Numeric(Numeric.Operations.Remainder, v1, v2, v1);
                         typeStack.Push(opp.ResultType);
                         Operations.Add(opp);
                         break;
@@ -221,11 +265,29 @@ namespace Santol.Loader
                         Operations.Add(opp);
                         break;
                     }
+                    case Code.Xor:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Numeric(Numeric.Operations.XOr, v1, v2, v1);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
                     case Code.Clt:
                     {
                         TypeReference v2 = typeStack.Pop();
                         TypeReference v1 = typeStack.Pop();
                         IOperation opp = new Comparison(typeSystem, Comparison.Operations.LessThan, v1, v2);
+                        typeStack.Push(opp.ResultType);
+                        Operations.Add(opp);
+                        break;
+                    }
+                    case Code.Cgt:
+                    {
+                        TypeReference v2 = typeStack.Pop();
+                        TypeReference v1 = typeStack.Pop();
+                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.GreaterThan, v1, v2);
                         typeStack.Push(opp.ResultType);
                         Operations.Add(opp);
                         break;
@@ -241,7 +303,7 @@ namespace Santol.Loader
                     }
                     case Code.Call:
                     {
-                        Mono.Cecil.MethodDefinition method = (Mono.Cecil.MethodDefinition) instruction.Operand;
+                        MethodDefinition method = (MethodDefinition) instruction.Operand;
 
                         int typeCount = method.Parameters.Count + (method.HasThis && !method.ExplicitThis ? 1 : 0);
                         TypeReference[] types = new TypeReference[typeCount];

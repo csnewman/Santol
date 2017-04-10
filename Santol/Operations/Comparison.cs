@@ -11,7 +11,8 @@ namespace Santol.Operations
         {
             Equal,
             LessThan,
-            GreaterThanOrEqual
+            GreaterThanOrEqual,
+            GreaterThan
         }
 
         public TypeReference Lhs { get; }
@@ -40,6 +41,10 @@ namespace Santol.Operations
             {
                 case Operations.LessThan:
                     stack.PushConverted(fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, v1, v2), cgen.TypeSystem.Boolean,
+                        ResultType);
+                    break;
+                case Operations.GreaterThan:
+                    stack.PushConverted(fgen.CompareInts(LLVMIntPredicate.LLVMIntSGT, v1, v2), cgen.TypeSystem.Boolean,
                         ResultType);
                     break;
                 case Operations.GreaterThanOrEqual:

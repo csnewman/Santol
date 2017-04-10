@@ -85,7 +85,7 @@ namespace Santol.Generator
 
             if (vals == null) return;
             LLVMValueRef[] phis = _blockPhis[block];
-            LLVMBasicBlockRef blockref = _namedBlocks[CurrentBlock] ;
+            LLVMBasicBlockRef blockref = _namedBlocks[CurrentBlock];
             for (int i = 0; i < vals.Length; i++)
                 LLVM.AddIncoming(phis[i], new[] {vals[i]}, new[] {blockref}, 1);
         }
@@ -135,15 +135,30 @@ namespace Santol.Generator
         {
             LLVM.BuildStore(_cgen.Builder, value, address);
         }
-        
+
         public LLVMValueRef AddInts(LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildAdd(_cgen.Builder, v1, v2, "");
         }
 
+        public LLVMValueRef SubtractInts(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildSub(_cgen.Builder, v1, v2, "");
+        }
+
         public LLVMValueRef MultiplyInts(LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildMul(_cgen.Builder, v1, v2, "");
+        }
+
+        public LLVMValueRef DivideInts(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildSDiv(_cgen.Builder, v1, v2, "");
+        }
+
+        public LLVMValueRef RemainderInts(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildSRem(_cgen.Builder, v1, v2, "");
         }
 
         public LLVMValueRef ShiftLeft(LLVMValueRef v1, LLVMValueRef v2)
@@ -154,6 +169,11 @@ namespace Santol.Generator
         public LLVMValueRef Or(LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildOr(_cgen.Builder, v1, v2, "");
+        }
+
+        public LLVMValueRef XOr(LLVMValueRef v1, LLVMValueRef v2)
+        {
+            return LLVM.BuildXor(_cgen.Builder, v1, v2, "");
         }
 
         public LLVMValueRef CompareInts(LLVMIntPredicate op, LLVMValueRef v1, LLVMValueRef v2)

@@ -134,8 +134,9 @@
     <Compile Include="Operations\ConditionalBranch.cs" />
     <Compile Include="Operations\Convert.cs" />
     <Compile Include="Operations\IOperation.cs" />
-    <Compile Include="Loader\MethodDefinition.cs" />
+    <Compile Include="Loader\MethodInfo.cs" />
     <Compile Include="Operations\LoadArg.cs" />
+    <Compile Include="Operations\LoadDirect.cs" />
     <Compile Include="Operations\LoadLocal.cs" />
     <Compile Include="Operations\LoadPrimitiveConstant.cs" />
     <Compile Include="Operations\LoadStatic.cs" />

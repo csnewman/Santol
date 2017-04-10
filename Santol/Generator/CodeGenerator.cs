@@ -15,7 +15,7 @@ namespace Santol.Generator
     {
         private string _moduleName, _target;
         public LLVMModuleRef Module { get; }
-        private LLVMContextRef _context;
+        public LLVMContextRef Context { get; }
         public LLVMBuilderRef Builder { get; }
         public TypeSystem TypeSystem { get; }
         private IDictionary<MethodDefinition, FunctionGenerator> _functions;
@@ -28,7 +28,7 @@ namespace Santol.Generator
             _moduleName = moduleName;
             _target = target;
             Module = LLVM.ModuleCreateWithName("Module_" + moduleName);
-            _context = LLVM.GetModuleContext(Module);
+            Context = LLVM.GetModuleContext(Module);
             Builder = LLVM.CreateBuilder();
             LLVM.SetTarget(Module, target);
             TypeSystem = typeSystem;
@@ -101,35 +101,35 @@ namespace Santol.Generator
             switch (reference.MetadataType)
             {
                 case MetadataType.Void:
-                    return LLVM.VoidTypeInContext(_context);
+                    return LLVM.VoidTypeInContext(Context);
                 case MetadataType.Boolean:
-                    return LLVM.Int1TypeInContext(_context);
+                    return LLVM.Int1TypeInContext(Context);
 
                 case MetadataType.Byte:
                 case MetadataType.SByte:
-                    return LLVM.Int8TypeInContext(_context);
+                    return LLVM.Int8TypeInContext(Context);
 
                 case MetadataType.Char:
                 case MetadataType.UInt16:
                 case MetadataType.Int16:
-                    return LLVM.Int16TypeInContext(_context);
+                    return LLVM.Int16TypeInContext(Context);
 
                 case MetadataType.UInt32:
                 case MetadataType.Int32:
-                    return LLVM.Int32TypeInContext(_context);
+                    return LLVM.Int32TypeInContext(Context);
 
                 case MetadataType.UInt64:
                 case MetadataType.Int64:
-                    return LLVM.Int64TypeInContext(_context);
+                    return LLVM.Int64TypeInContext(Context);
 
                 case MetadataType.Single:
-                    return LLVM.FloatTypeInContext(_context);
+                    return LLVM.FloatTypeInContext(Context);
                 case MetadataType.Double:
-                    return LLVM.DoubleTypeInContext(_context);
+                    return LLVM.DoubleTypeInContext(Context);
 
                 case MetadataType.IntPtr:
                 case MetadataType.UIntPtr:
-                    return LLVM.PointerType(LLVM.Int8TypeInContext(_context), 0);
+                    return LLVM.PointerType(LLVM.Int8TypeInContext(Context), 0);
 
                 case MetadataType.ValueType:
                 {
@@ -255,6 +255,8 @@ namespace Santol.Generator
                     {
                         case MetadataType.Byte:
                             return LLVM.BuildTrunc(Builder, value, ConvertType(destType), "");
+                        case MetadataType.Int32:
+                            return LLVM.BuildZExt(Builder, value, ConvertType(destType), "");
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
