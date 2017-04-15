@@ -48,26 +48,9 @@ namespace Santol.Generator
                 _generator.SetGlobal(field.GetName(), ftype, LLVM.ConstNull(ftype));
             }
 
-            if (type.IsStruct)
-            {
-                if (type.Definition.IsSequentialLayout)
-                {
-                    throw new NotImplementedException("Sequential structs are not supported yet!");
-                }
-                else
-                {
-                    throw new NotImplementedException("Non sequential structs are not supported yet!");
-                }
-            }
-
-            foreach (FieldDefinition field in type.LocalFields)
-            {
-                throw new NotImplementedException("Unable to generate local fields");
-            }
-
             foreach (MethodInfo methodDefinition in type.StaticMethods)
                 GenerateMethod(methodDefinition);
-            
+
             _generator.Optimise(_passManagerRef);
             _generator.Compile();
         }

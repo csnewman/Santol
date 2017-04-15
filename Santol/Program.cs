@@ -12,7 +12,7 @@ namespace Santol
         static void Main(string[] args)
         {
             AssemblyLoader loader = new AssemblyLoader();
-            IDictionary<string, LoadedType> types = loader.Load("TestOS.dll");
+            IDictionary<string, LoadedType> types = loader.Load("Rowan.dll");
 
 
             //Find target

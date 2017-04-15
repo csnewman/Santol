@@ -9,7 +9,7 @@ namespace Santol.Loader
         public TypeDefinition Definition { get; }
         public bool IsEnum => Definition.IsEnum;
         public bool IsStruct => Definition.IsValueType && !Definition.IsEnum;
-        public bool IsClass => Definition.IsClass;
+        public bool IsClass => Definition.IsClass && !Definition.IsEnum && !Definition.IsValueType;
         public bool IsInterface => Definition.IsInterface;
         public IList<FieldDefinition> StaticFields { get; }
         public IList<FieldDefinition> ConstantFields { get; }
