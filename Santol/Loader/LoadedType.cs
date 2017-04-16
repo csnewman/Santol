@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 
@@ -26,6 +27,16 @@ namespace Santol.Loader
             ConstantFields = constantFields;
             LocalFields = localFields;
             StaticMethods = staticMethods;
+        }
+
+        public int GetIndexOfLocal(FieldReference fref)
+        {
+            for (int i = 0; i < LocalFields.Count; i++)
+            {
+                if (fref.Equals(LocalFields[i]))
+                    return i;
+            }
+            throw new ArgumentException("Field does not exist!");
         }
     }
 }

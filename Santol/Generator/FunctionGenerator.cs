@@ -129,6 +129,11 @@ namespace Santol.Generator
             LLVM.BuildStore(_cgen.Builder, value, address);
         }
 
+        public LLVMValueRef GetStructElement(LLVMValueRef address, int index)
+        {
+            return LLVM.BuildStructGEP(_cgen.Builder, address, (uint) index, "");
+        }
+
         public LLVMValueRef AddInts(LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildAdd(_cgen.Builder, v1, v2, "");

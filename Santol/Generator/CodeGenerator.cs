@@ -315,6 +315,17 @@ namespace Santol.Generator
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
 
+
+                case MetadataType.UInt32:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.Int32:
+                            //TODO: Check
+                            return value;
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
                 case MetadataType.Int32:
                     switch (destType.MetadataType)
                     {

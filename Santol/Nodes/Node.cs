@@ -42,7 +42,11 @@ namespace Santol.Nodes
             return cgen.GenerateConversion(ResultType, target, _llvmRef);
         }
 
-
+        public LLVMValueRef GetLlvmRef()
+        {
+            return _llvmRef;
+        }
+        
         public abstract string ToFullString();
     }
 
@@ -57,5 +61,7 @@ namespace Santol.Nodes
         }
 
         public LLVMValueRef GetLlvmRef(CodeGenerator cgen, TypeReference target) => Node.GetLlvmRef(cgen, target);
+
+        public LLVMValueRef GetLlvmRef() => Node.GetLlvmRef();
     }
 }

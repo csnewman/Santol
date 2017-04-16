@@ -129,6 +129,9 @@ namespace Santol.Loader
                     case Code.Ldsfld:
                         PushNode(new LoadStatic((FieldReference) instruction.Operand));
                         break;
+                    case Code.Ldfld:
+                        PushNode(new LoadField(PopNode(), (FieldReference) instruction.Operand));
+                        break;
 
                     case Code.Ldind_U1:
                         PushNode(new LoadDirect(typeSystem.Byte, PopNode()));
