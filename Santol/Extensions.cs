@@ -19,10 +19,10 @@ namespace Santol
 
         public static string GetName(this TypeReference definition)
         {
-            return definition.FullName.Replace('.', '_');
+            return definition.FullName.Replace('.', '_').Replace("*", "PTR");
         }
 
-        public static string GetName(this Mono.Cecil.MethodDefinition definition)
+        public static string GetName(this MethodReference definition)
         {
             return definition.DeclaringType.GetName() + "____" + definition.Name + "___" +
                    string.Join("__", definition.Parameters.Select(p => p.ParameterType.GetName())) + "___" +

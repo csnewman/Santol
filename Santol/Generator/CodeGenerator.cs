@@ -22,6 +22,7 @@ namespace Santol.Generator
         private IDictionary<MethodDefinition, FunctionGenerator> _functions;
         private IDictionary<string, LLVMValueRef> _globalRefs, _funcRefs;
         private IDictionary<string, LoadedType> _types;
+        private IDictionary<LoadedType, LLVMTypeRef> _structCache;
 
         public CodeGenerator(string moduleName, string target, TypeSystem typeSystem,
             IDictionary<string, LoadedType> types)
@@ -36,6 +37,7 @@ namespace Santol.Generator
             _functions = new Dictionary<MethodDefinition, FunctionGenerator>();
             _globalRefs = new Dictionary<string, LLVMValueRef>();
             _funcRefs = new Dictionary<string, LLVMValueRef>();
+            _structCache = new Dictionary<LoadedType, LLVMTypeRef>();
             _types = types;
         }
 
@@ -48,7 +50,7 @@ namespace Santol.Generator
             return func;
         }
 
-        public LLVMValueRef GetFunctionRef(MethodDefinition definition)
+        public LLVMValueRef GetFunctionRef(MethodReference definition)
         {
             string name = definition.GetName();
             if (_funcRefs.ContainsKey(name))
@@ -61,7 +63,7 @@ namespace Santol.Generator
             return @ref;
         }
 
-        public LLVMTypeRef GetFunctionType(MethodDefinition definition)
+        public LLVMTypeRef GetFunctionType(MethodReference definition)
         {
             LLVMTypeRef returnType = ConvertType(definition.ReturnType);
             LLVMTypeRef[] paramTypes = definition.Parameters.Select(p => ConvertType(p.ParameterType)).ToArray();
@@ -140,14 +142,7 @@ namespace Santol.Generator
                     LoadedType def = _types[reference.FullName];
                     if (def.IsEnum)
                         return ConvertType(def.EnumType);
-                    Console.WriteLine("reference " + reference);
-                    Console.WriteLine(" Element type " + reference.GetElementType());
-                    Console.WriteLine("  MetadataType " + reference.MetadataType);
-                    Console.WriteLine("  DeclaringType " + reference.DeclaringType);
-                    Console.WriteLine("  FullName " + reference.FullName);
-                    Console.WriteLine("  Name " + reference.Name);
-                    Console.WriteLine("  MetadataToken " + reference.MetadataToken);
-                    throw new NotImplementedException("Unable to handle structs");
+                    return GetStructType(def);
                 }
                 default:
                     Console.WriteLine("reference " + reference);
@@ -159,6 +154,43 @@ namespace Santol.Generator
                     Console.WriteLine("  MetadataToken " + reference.MetadataToken);
                     throw new NotImplementedException("Unknown type! " + reference);
             }
+        }
+
+        private LLVMTypeRef GetStructType(LoadedType ltype)
+        {
+            Console.WriteLine("reference " + ltype.Definition);
+            Console.WriteLine(" Element type " + ltype.Definition.GetElementType());
+            Console.WriteLine("  MetadataType " + ltype.Definition.MetadataType);
+            Console.WriteLine("  DeclaringType " + ltype.Definition.DeclaringType);
+            Console.WriteLine("  FullName " + ltype.Definition.FullName);
+            Console.WriteLine("  Name " + ltype.Definition.Name);
+            Console.WriteLine("  MetadataToken " + ltype.Definition.MetadataToken);
+            Console.WriteLine("  HasLayoutInfo " + ltype.Definition.HasLayoutInfo);
+            Console.WriteLine("  IsAutoLayout " + ltype.Definition.IsAutoLayout);
+            Console.WriteLine("  IsSequentialLayout " + ltype.Definition.IsSequentialLayout);
+            Console.WriteLine("  IsExplicitLayout " + ltype.Definition.IsExplicitLayout);
+
+            if (_structCache.ContainsKey(ltype))
+                return _structCache[ltype];
+
+            LLVMTypeRef type = LLVM.StructCreateNamed(Context, ltype.Definition.GetName());
+            _structCache[ltype] = type;
+
+            if (ltype.Definition.PackingSize > 1)
+                throw new NotImplementedException("Unable to add packing");
+
+            if (!ltype.Definition.IsSequentialLayout)
+                throw new NotImplementedException("Unknown layout");
+
+            FieldDefinition[] locals = ltype.LocalFields.ToArray();
+            LLVMTypeRef[] types = new LLVMTypeRef[locals.Length];
+
+            for (int i = 0; i < locals.Length; i++)
+                types[i] = ConvertType(locals[i].FieldType);
+
+            LLVM.StructSetBody(type, types, ltype.Definition.PackingSize == 1);
+
+            return type;
         }
 
         public LLVMValueRef GeneratePrimitiveConstant(TypeReference typeReference, object value)
@@ -293,6 +325,18 @@ namespace Santol.Generator
                             return LLVM.BuildTrunc(Builder, value, ConvertType(destType), "");
                         case MetadataType.IntPtr:
                             return LLVM.BuildIntToPtr(Builder, value, ConvertType(destType), "");
+                        case MetadataType.Int64:
+                            return LLVM.BuildSExt(Builder, value, ConvertType(destType), "");
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
+
+                case MetadataType.Int64:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.UInt64:
+                            //TODO: Check
+                            return value;
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }

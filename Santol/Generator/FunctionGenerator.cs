@@ -193,7 +193,7 @@ namespace Santol.Generator
 //            return null;
 //        }
 
-        public LLVMValueRef? GenerateCall(MethodDefinition method, LLVMValueRef[] args)
+        public LLVMValueRef? GenerateCall(MethodReference method, LLVMValueRef[] args)
         {
             if (method.HasThis)
                 throw new NotImplementedException("Instance methods not supported");

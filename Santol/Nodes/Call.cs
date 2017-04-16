@@ -7,14 +7,14 @@ namespace Santol.Nodes
 {
     public class Call : Node
     {
-        public MethodDefinition Definition;
+        public MethodReference Method;
         public NodeReference[] Arguments { get; }
-        public override bool HasResult => Definition.ReturnType.MetadataType != MetadataType.Void;
-        public override TypeReference ResultType => Definition.ReturnType;
+        public override bool HasResult => Method.ReturnType.MetadataType != MetadataType.Void;
+        public override TypeReference ResultType => Method.ReturnType;
 
-        public Call(MethodDefinition definition, NodeReference[] arguments)
+        public Call(MethodReference method, NodeReference[] arguments)
         {
-            Definition = definition;
+            Method = method;
             Arguments = arguments;
         }
 
@@ -23,15 +23,15 @@ namespace Santol.Nodes
             LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
             for (int i = 0; i < args.Length; i++)
                 args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetLlvmRef(cgen,
-                    Definition.Parameters[args.Length - 1 - i].ParameterType);
+                    Method.Parameters[args.Length - 1 - i].ParameterType);
 
-            LLVMValueRef? val = fgen.GenerateCall(Definition, args);
+            LLVMValueRef? val = fgen.GenerateCall(Method, args);
             if (val.HasValue)
                 SetLlvmRef(val.Value);
         }
 
         public override string ToFullString()
             =>
-                $"Call [Args: [{string.Join<NodeReference>(", ", Arguments)}], Method: {Definition}, Result: {ResultType}]";
+                $"Call [Args: [{string.Join<NodeReference>(", ", Arguments)}], Method: {Method}, Result: {ResultType}]";
     }
 }

@@ -148,6 +148,9 @@ namespace Santol.Loader
                     case Code.Conv_I:
                         PushNode(new Nodes.Convert(typeSystem.IntPtr, PopNode()));
                         break;
+                    case Code.Conv_I8:
+                        PushNode(new Nodes.Convert(typeSystem.Int64, PopNode()));
+                        break;
                     case Code.Conv_U:
                         PushNode(new Nodes.Convert(typeSystem.UIntPtr, PopNode()));
                         break;
@@ -253,7 +256,7 @@ namespace Santol.Loader
 
                     case Code.Call:
                     {
-                        MethodDefinition method = (MethodDefinition) instruction.Operand;
+                        MethodReference method = (MethodReference) instruction.Operand;
 
                         int argCount = method.Parameters.Count + (method.HasThis && !method.ExplicitThis ? 1 : 0);
                         NodeReference[] args = new NodeReference[argCount];
@@ -326,7 +329,14 @@ namespace Santol.Loader
                         PushNode(new Return(Method.DoesReturn ? PopNode() : null));
                         return;
                     default:
+                    {
+                        Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
+                        for (int i = 0; i < stack.Item1.Length; i++)
+                        {
+                            Console.WriteLine($"{i}: {stack.Item1[i]}   {stack.Item2[i]}");
+                        }
                         throw new NotImplementedException("Unknown opcode " + instruction);
+                    }
                 }
             }
         }
