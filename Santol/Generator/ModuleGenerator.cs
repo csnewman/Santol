@@ -6,8 +6,7 @@ using LLVMSharp;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Santol.Loader;
-using Santol.Operations;
-using Convert = Santol.Operations.Convert;
+using Santol.Nodes;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
 
@@ -85,10 +84,9 @@ namespace Santol.Generator
             foreach (CodeSegment segment in segments)
             {
                 fgen.SelectBlock(segment);
-                StackBuilder builder = fgen.CurrentStackBuilder;
 
-                foreach (IOperation operation in segment.Operations)
-                    operation.Generate(_generator, fgen, builder);
+                foreach (Node node in segment.Nodes)
+                    node.Generate(_generator, fgen);
             }
         }
     }

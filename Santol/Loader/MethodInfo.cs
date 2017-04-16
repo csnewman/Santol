@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Santol.Generator;
-using Santol.Operations;
+using Santol.Nodes;
 using MMethodDefinition = Mono.Cecil.MethodDefinition;
 
 namespace Santol.Loader
@@ -58,9 +57,9 @@ namespace Santol.Loader
                     $"      Incoming: {(!segment.HasIncoming ? "none" : string.Join<TypeReference>(",", segment.Incoming))}");
                 Console.WriteLine($"      Calls: {segment.Callers.Count}");
                 Console.WriteLine($"      End Point: {segment.IsEndPoint}");
-                foreach (IOperation operation in segment.Operations)
+                foreach (Node node in segment.Nodes)
                 {
-                    Console.WriteLine("        " + operation.ToFullString());
+                    Console.WriteLine("        " + node.ToFullString());
                 }
             }
         }

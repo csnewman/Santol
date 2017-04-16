@@ -3,9 +3,9 @@ using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
 
-namespace Santol.Operations
+namespace Santol.Nodes
 {
-    public class Numeric : IOperation
+    public class Numeric : Node
     {
         public enum Operations
         {
@@ -19,25 +19,23 @@ namespace Santol.Operations
             XOr
         }
 
-        public TypeReference Lhs { get; }
-        public TypeReference Rhs { get; }
-        public TypeReference ResultType { get; }
+        public NodeReference Lhs { get; }
+        public NodeReference Rhs { get; }
+        public override bool HasResult => true;
+        public override TypeReference ResultType => Lhs.ResultType;
         public Operations Operation { get; }
 
-        public Numeric(Operations operation, TypeReference lhs, TypeReference rhs, TypeReference type)
+        public Numeric(Operations operation, NodeReference lhs, NodeReference rhs)
         {
             Operation = operation;
             Lhs = lhs;
             Rhs = rhs;
-            ResultType = type;
         }
 
-        public void Generate(CodeGenerator cgen, FunctionGenerator fgen, StackBuilder stack)
+        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
         {
-            LLVMValueRef v2 = stack.Pop();
-            LLVMValueRef v1 = stack.Pop();
-
-            TypeReference lhs = Lhs, rhs = Rhs;
+            TypeReference lhs = Lhs.ResultType;
+            TypeReference rhs = Rhs.ResultType;
 
             if (cgen.IsEnum(lhs))
                 lhs = cgen.GetEnumType(lhs);
@@ -46,39 +44,43 @@ namespace Santol.Operations
 
             if (lhs != rhs)
                 throw new NotImplementedException("Numeric ops on different types not implemented yet");
+            TypeReference target = lhs;
+
+            LLVMValueRef lhsValue = Lhs.GetLlvmRef(cgen, target);
+            LLVMValueRef rhsValue = Rhs.GetLlvmRef(cgen, target);
 
             switch (Operation)
             {
                 case Operations.Add:
-                    stack.PushConverted(fgen.AddInts(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.AddInts(lhsValue, rhsValue));
                     break;
                 case Operations.Subtract:
-                    stack.PushConverted(fgen.SubtractInts(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.SubtractInts(lhsValue, rhsValue));
                     break;
                 case Operations.Multiply:
-                    stack.PushConverted(fgen.MultiplyInts(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.MultiplyInts(lhsValue, rhsValue));
                     break;
                 case Operations.Divide:
-                    stack.PushConverted(fgen.DivideInts(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.DivideInts(lhsValue, rhsValue));
                     break;
                 case Operations.Remainder:
-                    stack.PushConverted(fgen.RemainderInts(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.RemainderInts(lhsValue, rhsValue));
                     break;
                 case Operations.ShiftLeft:
-                    stack.PushConverted(fgen.ShiftLeft(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.ShiftLeft(lhsValue, rhsValue));
                     break;
                 case Operations.Or:
-                    stack.PushConverted(fgen.Or(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.Or(lhsValue, rhsValue));
                     break;
                 case Operations.XOr:
-                    stack.PushConverted(fgen.XOr(v1, v2), lhs, ResultType);
+                    SetLlvmRef(cgen, target, fgen.XOr(lhsValue, rhsValue));
                     break;
                 default:
                     throw new NotImplementedException("Unknown operation " + Operation);
             }
         }
 
-        public string ToFullString()
+        public override string ToFullString()
             => $"Numeric [Operation: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
     }
 }

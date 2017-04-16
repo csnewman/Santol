@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Loader;
-using Santol.Operations;
 
 namespace Santol.Generator
 {
@@ -15,11 +14,9 @@ namespace Santol.Generator
         public LLVMValueRef[] Locals { get; set; }
         private readonly IDictionary<string, LLVMBasicBlockRef> _namedBlocks;
         private readonly IDictionary<string, LLVMValueRef[]> _blockPhis;
-        private readonly IDictionary<string, StackBuilder> _blockStackBuilders;
 
         public string CurrentBlock { get; private set; }
         public LLVMValueRef[] CurrentPhis => _blockPhis[CurrentBlock];
-        public StackBuilder CurrentStackBuilder => _blockStackBuilders[CurrentBlock];
 
         public FunctionGenerator(CodeGenerator cgen, Mono.Cecil.MethodDefinition definition, LLVMValueRef functionRef)
         {
@@ -28,7 +25,6 @@ namespace Santol.Generator
             FunctionRef = functionRef;
             _namedBlocks = new Dictionary<string, LLVMBasicBlockRef>();
             _blockPhis = new Dictionary<string, LLVMValueRef[]>();
-            _blockStackBuilders = new Dictionary<string, StackBuilder>();
         }
 
         public void CreateBlock(string name, LLVMTypeRef[] incomings)
@@ -36,16 +32,13 @@ namespace Santol.Generator
             _namedBlocks[name] = LLVM.AppendBasicBlock(FunctionRef, name);
             SelectBlock(name);
 
-            StackBuilder builder = new StackBuilder(_cgen, this);
             LLVMValueRef[] phis = new LLVMValueRef[incomings?.Length ?? 0];
             for (int i = 0; i < phis.Length; i++)
             {
                 LLVMValueRef phi = LLVM.BuildPhi(_cgen.Builder, incomings[i], "in_" + i);
                 phis[i] = phi;
-                builder.Push(phi);
             }
             _blockPhis[name] = phis;
-            _blockStackBuilders[name] = builder;
         }
 
         public void CreateBlock(CodeSegment segment, LLVMTypeRef[] incomings)
@@ -181,22 +174,35 @@ namespace Santol.Generator
             return LLVM.BuildICmp(_cgen.Builder, op, v1, v2, "");
         }
 
-        public LLVMValueRef? GenerateCall(Mono.Cecil.MethodDefinition method, TypeReference[] argTypes,
-            LLVMValueRef[] args)
+//        public LLVMValueRef? GenerateCall(MethodDefinition method, TypeReference[] argTypes,
+//            LLVMValueRef[] args)
+//        {
+//            if (method.HasThis)
+//                throw new NotImplementedException("Instance methods not supported");
+//
+//            LLVMValueRef func = _cgen.GetFunctionRef(method);
+//
+//            LLVMValueRef[] convArgs = new LLVMValueRef[args.Length];
+//            for (int i = 0; i < args.Length; i++)
+//                convArgs[i] = _cgen.GenerateConversion(argTypes[i], method.Parameters[i].ParameterType, args[i]);
+//
+//            if (method.ReturnType.MetadataType != MetadataType.Void)
+//                return LLVM.BuildCall(_cgen.Builder, func, convArgs, "");
+//
+//            LLVM.BuildCall(_cgen.Builder, func, convArgs, "");
+//            return null;
+//        }
+
+        public LLVMValueRef? GenerateCall(MethodDefinition method, LLVMValueRef[] args)
         {
             if (method.HasThis)
                 throw new NotImplementedException("Instance methods not supported");
 
             LLVMValueRef func = _cgen.GetFunctionRef(method);
 
-            LLVMValueRef[] convArgs = new LLVMValueRef[args.Length];
-            for (int i = 0; i < args.Length; i++)
-                convArgs[i] = _cgen.GenerateConversion(argTypes[i], method.Parameters[i].ParameterType, args[i]);
-
             if (method.ReturnType.MetadataType != MetadataType.Void)
-                return LLVM.BuildCall(_cgen.Builder, func, convArgs, "");
-
-            LLVM.BuildCall(_cgen.Builder, func, convArgs, "");
+                return LLVM.BuildCall(_cgen.Builder, func, args, "");
+            LLVM.BuildCall(_cgen.Builder, func, args, "");
             return null;
         }
 

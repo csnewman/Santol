@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using Santol.Loader;
 using MethodDefinition = Mono.Cecil.MethodDefinition;
 
@@ -46,7 +47,7 @@ namespace Santol.Generator
             _functions[definition] = func;
             return func;
         }
-        
+
         public LLVMValueRef GetFunctionRef(MethodDefinition definition)
         {
             string name = definition.GetName();
@@ -131,15 +132,26 @@ namespace Santol.Generator
                 case MetadataType.UIntPtr:
                     return LLVM.PointerType(LLVM.Int8TypeInContext(Context), 0);
 
+                case MetadataType.Pointer:
+                    return LLVM.PointerType(ConvertType(reference.GetElementType()), 0);
+
                 case MetadataType.ValueType:
                 {
                     LoadedType def = _types[reference.FullName];
                     if (def.IsEnum)
                         return ConvertType(def.EnumType);
+                    Console.WriteLine("reference " + reference);
+                    Console.WriteLine(" Element type " + reference.GetElementType());
+                    Console.WriteLine("  MetadataType " + reference.MetadataType);
+                    Console.WriteLine("  DeclaringType " + reference.DeclaringType);
+                    Console.WriteLine("  FullName " + reference.FullName);
+                    Console.WriteLine("  Name " + reference.Name);
+                    Console.WriteLine("  MetadataToken " + reference.MetadataToken);
                     throw new NotImplementedException("Unable to handle structs");
                 }
                 default:
                     Console.WriteLine("reference " + reference);
+                    Console.WriteLine(" Element type " + reference.GetElementType());
                     Console.WriteLine("  MetadataType " + reference.MetadataType);
                     Console.WriteLine("  DeclaringType " + reference.DeclaringType);
                     Console.WriteLine("  FullName " + reference.FullName);

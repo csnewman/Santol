@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Santol.Operations;
-using Convert = Santol.Operations.Convert;
+using Santol.Nodes;
 
 namespace Santol.Loader
 {
@@ -18,14 +17,15 @@ namespace Santol.Loader
         public bool HasIncoming => !ForceNoIncomings && Incoming != null && Incoming.Length > 0;
         public TypeReference[] Incoming { get; set; }
         public IList<CodeSegment> Callers { get; }
-        public IList<IOperation> Operations { get; }
+        public IList<Node> Nodes { get; }
+        private Stack<Node> _nodeStack;
 
         public CodeSegment(MethodInfo method, string name)
         {
             Method = method;
             Name = name;
             Instructions = new List<Instruction>();
-            Operations = new List<IOperation>();
+            Nodes = new List<Node>();
             Callers = new List<CodeSegment>();
         }
 
@@ -58,13 +58,46 @@ namespace Santol.Loader
             }
         }
 
+        private void PushNode(Node node)
+        {
+            Nodes.Add(node);
+            if (node.HasResult)
+                _nodeStack.Push(node);
+        }
+
+        private NodeReference AddNode(Node node)
+        {
+            Nodes.Add(node);
+            return node.TakeReference();
+        }
+
+        private NodeReference PopNode()
+        {
+            return _nodeStack.Pop().TakeReference();
+        }
+
+        private Tuple<TypeReference[], NodeReference[]> GetStackInfo()
+        {
+            Node[] nodes = _nodeStack.ToArray();
+            TypeReference[] types = new TypeReference[nodes.Length];
+            NodeReference[] refs = new NodeReference[nodes.Length];
+            for (int i = 0; i < types.Length; i++)
+            {
+                Node node = nodes[i];
+                types[i] = node.ResultType;
+                refs[i] = node.TakeReference();
+            }
+            return new Tuple<TypeReference[], NodeReference[]>(types, refs);
+        }
+
         public void ParseInstructions(TypeSystem typeSystem)
         {
-            Operations.Clear();
+            Nodes.Clear();
+            _nodeStack = new Stack<Node>();
 
-            Stack<TypeReference> typeStack = HasIncoming
-                ? new Stack<TypeReference>(Incoming)
-                : new Stack<TypeReference>();
+            if (HasIncoming)
+                for (int i = 0; i < Incoming.Length; i++)
+                    PushNode(new IncomingValue(Incoming[i], i));
 
             foreach (Instruction instruction in Instructions)
             {
@@ -72,318 +105,226 @@ namespace Santol.Loader
                 {
                     case Code.Nop:
                         break;
-                    case Code.Ldnull:
-                    {
-                        IOperation opp = new LoadNullConstant();
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
-                        break;
-                    }
+
                     case Code.Ldc_I4:
-                    {
-                        IOperation opp = new LoadPrimitiveConstant(typeSystem.Int32, instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadPrimitiveConstant(typeSystem.Int32, instruction.Operand));
                         break;
-                    }
                     case Code.Ldc_I8:
-                    {
-                        IOperation opp = new LoadPrimitiveConstant(typeSystem.Int64, instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadPrimitiveConstant(typeSystem.Int64, instruction.Operand));
                         break;
-                    }
                     case Code.Ldc_R4:
-                    {
-                        IOperation opp = new LoadPrimitiveConstant(typeSystem.Single, instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadPrimitiveConstant(typeSystem.Single, instruction.Operand));
                         break;
-                    }
                     case Code.Ldc_R8:
-                    {
-                        IOperation opp = new LoadPrimitiveConstant(typeSystem.Double, instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadPrimitiveConstant(typeSystem.Double, instruction.Operand));
                         break;
-                    }
+
+
                     case Code.Ldloc:
-                    {
-                        IOperation opp = new LoadLocal((Mono.Cecil.Cil.VariableDefinition) instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadLocal((VariableDefinition) instruction.Operand));
                         break;
-                    }
                     case Code.Ldarg:
-                    {
-                        IOperation opp = new LoadArg((ParameterDefinition) instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadArg((ParameterDefinition) instruction.Operand));
                         break;
-                    }
                     case Code.Ldsfld:
-                    {
-                        IOperation opp = new LoadStatic((FieldReference) instruction.Operand);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadStatic((FieldReference) instruction.Operand));
                         break;
-                    }
+
                     case Code.Ldind_U1:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new LoadDirect(typeSystem.Byte, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new LoadDirect(typeSystem.Byte, PopNode()));
                         break;
-                    }
+
                     case Code.Stloc:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        Operations.Add(new StoreLocal((VariableDefinition) instruction.Operand, v1));
+                        PushNode(new StoreLocal((VariableDefinition) instruction.Operand, PopNode()));
                         break;
-                    }
-                    case Code.Stind_I1:
-                    {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        Operations.Add(new StoreDirect(typeSystem.Byte, v2, v1));
-                        break;
-                    }
                     case Code.Stsfld:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        Operations.Add(new StoreStatic((FieldReference) instruction.Operand, v1));
+                        PushNode(new StoreStatic((FieldReference) instruction.Operand, PopNode()));
                         break;
-                    }
+
+                    case Code.Stind_I1:
+                        PushNode(new StoreDirect(typeSystem.Byte, PopNode(), PopNode()));
+                        break;
+
                     case Code.Conv_I:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Convert(v1, typeSystem.IntPtr);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new Nodes.Convert(typeSystem.IntPtr, PopNode()));
                         break;
-                    }
                     case Code.Conv_U:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Convert(v1, typeSystem.UIntPtr);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new Nodes.Convert(typeSystem.UIntPtr, PopNode()));
                         break;
-                    }
                     case Code.Conv_U1:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Convert(v1, typeSystem.Byte);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new Nodes.Convert(typeSystem.Byte, PopNode()));
                         break;
-                    }
                     case Code.Conv_U2:
-                    {
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Convert(v1, typeSystem.UInt16);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new Nodes.Convert(typeSystem.UInt16, PopNode()));
                         break;
-                    }
+
                     case Code.Add:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        if (v1 != v2)
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not add two different types!");
-
-                        IOperation opp = new Numeric(Numeric.Operations.Add, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new Numeric(Numeric.Operations.Add, lhs, rhs));
                         break;
                     }
                     case Code.Sub:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        if (v1 != v2)
-                            throw new NotSupportedException("Can not add two different types!");
-
-                        IOperation opp = new Numeric(Numeric.Operations.Subtract, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not subtract two different types!");
+                        PushNode(new Numeric(Numeric.Operations.Subtract, lhs, rhs));
                         break;
                     }
                     case Code.Mul:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        if (v1 != v2)
-                            throw new NotSupportedException("Can not add two different types!");
-
-                        IOperation opp = new Numeric(Numeric.Operations.Multiply, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not multiply two different types!");
+                        PushNode(new Numeric(Numeric.Operations.Multiply, lhs, rhs));
                         break;
                     }
                     case Code.Div:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        if (v1 != v2)
-                            throw new NotSupportedException("Can not add two different types!");
-
-                        IOperation opp = new Numeric(Numeric.Operations.Divide, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not divide two different types!");
+                        PushNode(new Numeric(Numeric.Operations.Divide, lhs, rhs));
                         break;
                     }
                     case Code.Rem:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        if (v1 != v2)
-                            throw new NotSupportedException("Can not add two different types!");
-
-                        IOperation opp = new Numeric(Numeric.Operations.Remainder, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not find remainder of two different types!");
+                        PushNode(new Numeric(Numeric.Operations.Remainder, lhs, rhs));
                         break;
                     }
                     case Code.Shl:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Numeric(Numeric.Operations.ShiftLeft, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Numeric(Numeric.Operations.ShiftLeft, lhs, rhs));
                         break;
                     }
                     case Code.Or:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Numeric(Numeric.Operations.Or, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not or two different types!");
+                        PushNode(new Numeric(Numeric.Operations.Or, lhs, rhs));
                         break;
                     }
                     case Code.Xor:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Numeric(Numeric.Operations.XOr, v1, v2, v1);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not xor two different types!");
+                        PushNode(new Numeric(Numeric.Operations.XOr, lhs, rhs));
                         break;
                     }
+
                     case Code.Clt:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.LessThan, v1, v2);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Comparison(typeSystem, Comparison.Operations.LessThan, lhs, rhs));
                         break;
                     }
                     case Code.Cgt:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.GreaterThan, v1, v2);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Comparison(typeSystem, Comparison.Operations.GreaterThan, lhs, rhs));
                         break;
                     }
                     case Code.Ceq:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.Equal, v1, v2);
-                        typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Comparison(typeSystem, Comparison.Operations.Equal, lhs, rhs));
                         break;
                     }
+
                     case Code.Call:
                     {
                         MethodDefinition method = (MethodDefinition) instruction.Operand;
 
-                        int typeCount = method.Parameters.Count + (method.HasThis && !method.ExplicitThis ? 1 : 0);
-                        TypeReference[] types = new TypeReference[typeCount];
+                        int argCount = method.Parameters.Count + (method.HasThis && !method.ExplicitThis ? 1 : 0);
+                        NodeReference[] args = new NodeReference[argCount];
 
-                        for (int i = 0; i < types.Length; i++)
-                            types[types.Length - 1 - i] = typeStack.Pop();
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = PopNode();
 
-                        IOperation opp = new Call(method, types);
-                        if (method.ReturnType.MetadataType != MetadataType.Void)
-                            typeStack.Push(opp.ResultType);
-                        Operations.Add(opp);
+                        PushNode(new Call(method, args));
                         break;
                     }
                     case Code.Br:
                     {
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
-                        TypeReference[] types = typeStack.ToArray();
-                        segment.AddCaller(this, types);
-                        Operations.Add(new Branch(segment, types));
+                        Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
+                        segment.AddCaller(this, stack.Item1);
+                        PushNode(new Branch(segment, stack.Item2));
                         return;
                     }
                     case Code.Brtrue:
                     {
-                        TypeReference v1 = typeStack.Pop();
+                        NodeReference cond = PopNode();
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
-                        TypeReference[] stack = typeStack.ToArray();
-                        segment.AddCaller(this, stack);
-                        elseSegment.AddCaller(this, stack);
-                        Operations.Add(new ConditionalBranch(segment, elseSegment, v1, stack));
+                        Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
+                        segment.AddCaller(this, stack.Item1);
+                        elseSegment.AddCaller(this, stack.Item1);
+                        PushNode(new ConditionalBranch(segment, elseSegment, cond, stack.Item2));
                         return;
                     }
                     case Code.Brfalse:
                     {
-                        TypeReference v1 = typeStack.Pop();
+                        NodeReference cond = PopNode();
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
-                        TypeReference[] stack = typeStack.ToArray();
-                        segment.AddCaller(this, stack);
-                        elseSegment.AddCaller(this, stack);
+                        Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
+                        segment.AddCaller(this, stack.Item1);
+                        elseSegment.AddCaller(this, stack.Item1);
                         //TODO: Check whether this is valid in all cases
-                        Operations.Add(new ConditionalBranch(elseSegment, segment, v1, stack));
+                        PushNode(new ConditionalBranch(elseSegment, segment, cond, stack.Item2));
                         return;
                     }
                     case Code.Blt:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.LessThan, v1, v2);
-                        Operations.Add(opp);
-
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond = AddNode(new Comparison(typeSystem, Comparison.Operations.LessThan, v1, v2));
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
-                        TypeReference[] stack = typeStack.ToArray();
-                        segment.AddCaller(this, stack);
-                        elseSegment.AddCaller(this, stack);
-                        Operations.Add(new ConditionalBranch(segment, elseSegment, opp.ResultType, stack));
+                        Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
+                        segment.AddCaller(this, stack.Item1);
+                        elseSegment.AddCaller(this, stack.Item1);
+                        PushNode(new ConditionalBranch(segment, elseSegment, cond, stack.Item2));
                         return;
                     }
                     case Code.Bge:
                     {
-                        TypeReference v2 = typeStack.Pop();
-                        TypeReference v1 = typeStack.Pop();
-                        IOperation opp = new Comparison(typeSystem, Comparison.Operations.GreaterThanOrEqual, v1, v2);
-                        Operations.Add(opp);
-
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(typeSystem, Comparison.Operations.GreaterThanOrEqual, v1, v2));
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
-                        TypeReference[] stack = typeStack.ToArray();
-                        segment.AddCaller(this, stack);
-                        elseSegment.AddCaller(this, stack);
-                        Operations.Add(new ConditionalBranch(segment, elseSegment, opp.ResultType, stack));
+                        Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
+                        segment.AddCaller(this, stack.Item1);
+                        elseSegment.AddCaller(this, stack.Item1);
+                        PushNode(new ConditionalBranch(segment, elseSegment, cond, stack.Item2));
                         return;
                     }
                     case Code.Ret:
-                    {
-                        TypeReference type = Method.DoesReturn ? typeStack.Pop() : null;
-                        Operations.Add(new Return(type));
+                        PushNode(new Return(Method.DoesReturn ? PopNode() : null));
                         return;
-                    }
                     default:
                         throw new NotImplementedException("Unknown opcode " + instruction);
                 }
