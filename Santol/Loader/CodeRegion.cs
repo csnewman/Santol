@@ -19,18 +19,23 @@ namespace Santol.Loader
 
         public RegionType Type { get; }
         public InstructionRange Range { get; }
-        public CodeRegion AssociatedRegion { get; }
+        public IList<CodeRegion> AssociatedRegions { get; }
         public IList<CodeRegion> ChildRegions { get; }
 
-        public CodeRegion(RegionType type, InstructionRange range, CodeRegion associatedRegion)
+        public CodeRegion(RegionType type, InstructionRange range)
         {
             Type = type;
             Range = range;
-            AssociatedRegion = associatedRegion;
+            AssociatedRegions = new List<CodeRegion>();
             ChildRegions = new List<CodeRegion>();
         }
 
-        public CodeRegion AddRegion(RegionType type, InstructionRange range, CodeRegion associatedRegion)
+        public void AddAssociatedRegion(CodeRegion region)
+        {
+            AssociatedRegions.Add(region);
+        }
+
+        public CodeRegion AddRegion(RegionType type, InstructionRange range)
         {
             if (Range.Equals(range))
             {
@@ -42,9 +47,9 @@ namespace Santol.Loader
                 throw new ArgumentException("Cannot create sub region with a subregion not contained");
             foreach (CodeRegion sregion in ChildRegions)
                 if (sregion.Range.IsContained(range))
-                    return sregion.AddRegion(type, range, associatedRegion);
+                    return sregion.AddRegion(type, range);
 
-            CodeRegion newRegion = new CodeRegion(type, range, associatedRegion);
+            CodeRegion newRegion = new CodeRegion(type, range);
             ChildRegions.Add(newRegion);
             return newRegion;
         }

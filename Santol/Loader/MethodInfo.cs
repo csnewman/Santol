@@ -138,26 +138,34 @@ namespace Santol.Loader
         public void ParseRegions()
         {
             _baseRegion = new CodeRegion(CodeRegion.RegionType.Root,
-                new InstructionRange(Body.Instructions.First(), Body.Instructions.Last()), null);
+                new InstructionRange(Body.Instructions.First(), Body.Instructions.Last()));
 
             foreach (ExceptionHandler exceptionHandler in Body.ExceptionHandlers.Reverse())
             {
                 CodeRegion tryRegion = _baseRegion.AddRegion(CodeRegion.RegionType.Try,
                     new InstructionRange(exceptionHandler.TryStart,
-                        exceptionHandler.TryEnd.Previous), null);
+                        exceptionHandler.TryEnd.Previous));
 
                 switch (exceptionHandler.HandlerType)
                 {
                     case ExceptionHandlerType.Catch:
-                        _baseRegion.AddRegion(CodeRegion.RegionType.Catch,
+                    {
+                        CodeRegion region = _baseRegion.AddRegion(CodeRegion.RegionType.Catch,
                             new InstructionRange(exceptionHandler.HandlerStart,
-                                exceptionHandler.HandlerEnd.Previous), tryRegion);
+                                exceptionHandler.HandlerEnd.Previous));
+                        region.AddAssociatedRegion(tryRegion);
+                        tryRegion.AddAssociatedRegion(region);
                         break;
+                    }
                     case ExceptionHandlerType.Finally:
-                        _baseRegion.AddRegion(CodeRegion.RegionType.Finally,
+                    {
+                        CodeRegion region = _baseRegion.AddRegion(CodeRegion.RegionType.Finally,
                             new InstructionRange(exceptionHandler.HandlerStart,
-                                exceptionHandler.HandlerEnd.Previous), tryRegion);
+                                exceptionHandler.HandlerEnd.Previous));
+                        region.AddAssociatedRegion(tryRegion);
+                        tryRegion.AddAssociatedRegion(region);
                         break;
+                    }
                     default:
                         throw new NotSupportedException();
                 }
@@ -254,7 +262,6 @@ namespace Santol.Loader
                 Console.WriteLine(
                     $"      Region: {segment.Region.Type} ({segment.Region.Range.Start.Offset}-{segment.Region.Range.End.Offset})");
                 Console.WriteLine($"      Calls: {segment.Callers.Count}");
-                //                Console.WriteLine($"      End Point: {segment.IsEndPoint}");
                 foreach (Node node in segment.Nodes)
                     Console.WriteLine("        " + node.ToFullString());
             }

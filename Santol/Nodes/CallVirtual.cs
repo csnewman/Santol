@@ -11,7 +11,7 @@ namespace Santol.Nodes
 {
     public class CallVirtual : Node
     {
-        public MethodReference Method;
+        public MethodReference Method { get; }
         public NodeReference Instance { get; }
         public NodeReference[] Arguments { get; }
         public override bool HasResult => Method.ReturnType.MetadataType != MetadataType.Void;

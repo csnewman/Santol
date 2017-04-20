@@ -7,7 +7,7 @@ namespace Santol.Nodes
 {
     public class Numeric : Node
     {
-        public enum Operations
+        public enum OperationType
         {
             Add,
             Subtract,
@@ -23,9 +23,9 @@ namespace Santol.Nodes
         public NodeReference Rhs { get; }
         public override bool HasResult => true;
         public override TypeReference ResultType => Lhs.ResultType;
-        public Operations Operation { get; }
+        public OperationType Operation { get; }
 
-        public Numeric(Compiler compiler, Operations operation, NodeReference lhs, NodeReference rhs) : base(compiler)
+        public Numeric(Compiler compiler, OperationType operation, NodeReference lhs, NodeReference rhs) : base(compiler)
         {
             Operation = operation;
             Lhs = lhs;
@@ -51,36 +51,36 @@ namespace Santol.Nodes
 
             switch (Operation)
             {
-                case Operations.Add:
+                case OperationType.Add:
                     SetLlvmRef(target, fgen.AddInts(lhsValue, rhsValue));
                     break;
-                case Operations.Subtract:
+                case OperationType.Subtract:
                     SetLlvmRef(target, fgen.SubtractInts(lhsValue, rhsValue));
                     break;
-                case Operations.Multiply:
+                case OperationType.Multiply:
                     SetLlvmRef(target, fgen.MultiplyInts(lhsValue, rhsValue));
                     break;
-                case Operations.Divide:
+                case OperationType.Divide:
                     SetLlvmRef(target, fgen.DivideInts(lhsValue, rhsValue));
                     break;
-                case Operations.Remainder:
+                case OperationType.Remainder:
                     SetLlvmRef(target, fgen.RemainderInts(lhsValue, rhsValue));
                     break;
-                case Operations.ShiftLeft:
+                case OperationType.ShiftLeft:
                     SetLlvmRef(target, fgen.ShiftLeft(lhsValue, rhsValue));
                     break;
-                case Operations.Or:
+                case OperationType.Or:
                     SetLlvmRef(target, fgen.Or(lhsValue, rhsValue));
                     break;
-                case Operations.XOr:
+                case OperationType.XOr:
                     SetLlvmRef(target, fgen.XOr(lhsValue, rhsValue));
                     break;
                 default:
-                    throw new NotImplementedException("Unknown operation " + Operation);
+                    throw new NotImplementedException("Unknown operationType " + Operation);
             }
         }
 
         public override string ToFullString()
-            => $"Numeric [Operation: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
+            => $"Numeric [OperationType: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
     }
 }

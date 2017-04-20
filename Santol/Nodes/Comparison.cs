@@ -7,7 +7,7 @@ namespace Santol.Nodes
 {
     public class Comparison : Node
     {
-        public enum Operations
+        public enum OperationType
         {
             Equal,
             LessThan,
@@ -19,12 +19,12 @@ namespace Santol.Nodes
         public NodeReference Rhs { get; }
         public override bool HasResult => true;
         public override TypeReference ResultType { get; }
-        public Operations Operation { get; }
+        public OperationType Operation { get; }
 
-        public Comparison(Compiler compiler, Operations operation, NodeReference lhs, NodeReference rhs)
+        public Comparison(Compiler compiler, OperationType operationType, NodeReference lhs, NodeReference rhs)
             : base(compiler)
         {
-            Operation = operation;
+            Operation = operationType;
             Lhs = lhs;
             Rhs = rhs;
             //TODO: Check whether change from int32 will break CIL code
@@ -39,28 +39,28 @@ namespace Santol.Nodes
 
             switch (Operation)
             {
-                case Operations.LessThan:
+                case OperationType.LessThan:
                     SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, lhsValue, rhsValue));
                     break;
-                case Operations.GreaterThan:
+                case OperationType.GreaterThan:
                     SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSGT, lhsValue, rhsValue));
                     break;
-                case Operations.GreaterThanOrEqual:
+                case OperationType.GreaterThanOrEqual:
                     SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSGE, lhsValue, rhsValue));
                     break;
-                case Operations.Equal:
+                case OperationType.Equal:
                     SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntEQ, lhsValue, rhsValue));
                     break;
                 default:
-                    throw new NotImplementedException("Unknown operation " + Operation);
+                    throw new NotImplementedException("Unknown operationType " + Operation);
             }
         }
 
         public override string ToFullString()
-            => $"Comparison [Operation: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
+            => $"Comparison [OperationType: {Operation}, LHS: {Lhs}, RHS: {Rhs}, Result: {ResultType}]";
     }
 }

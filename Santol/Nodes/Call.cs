@@ -7,7 +7,7 @@ namespace Santol.Nodes
 {
     public class Call : Node
     {
-        public MethodReference Method;
+        public MethodReference Method { get; }
         public NodeReference[] Arguments { get; }
         public override bool HasResult => Method.ReturnType.MetadataType != MetadataType.Void;
         public override TypeReference ResultType => Method.ReturnType;
