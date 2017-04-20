@@ -12,20 +12,22 @@ namespace Santol.Loader
         public MethodInfo Method { get; }
         public string Name { get; }
         public IList<Instruction> Instructions { get; }
-        public bool IsEndPoint => Instructions.Last().OpCode.FlowControl == FlowControl.Return;
+//        public bool IsEndPoint => Instructions.Last().OpCode.FlowControl == FlowControl.Return;
         public bool ForceNoIncomings { get; set; }
         public bool HasIncoming => !ForceNoIncomings && Incoming != null && Incoming.Length > 0;
         public TypeReference[] Incoming { get; set; }
+        public CodeRegion Region { get; }
         public IList<CodeSegment> Callers { get; }
         public IList<Node> Nodes { get; }
         private Stack<Node> _nodeStack;
 
-        public CodeSegment(MethodInfo method, string name)
+        public CodeSegment(MethodInfo method, string name, CodeRegion region)
         {
             Method = method;
             Name = name;
             Instructions = new List<Instruction>();
             Nodes = new List<Node>();
+            Region = region;
             Callers = new List<CodeSegment>();
         }
 
@@ -90,14 +92,14 @@ namespace Santol.Loader
             return new Tuple<TypeReference[], NodeReference[]>(types, refs);
         }
 
-        public void ParseInstructions(TypeSystem typeSystem)
+        public void ParseInstructions(Compiler compiler)
         {
             Nodes.Clear();
             _nodeStack = new Stack<Node>();
 
             if (HasIncoming)
                 for (int i = 0; i < Incoming.Length; i++)
-                    PushNode(new IncomingValue(Incoming[i], i));
+                    PushNode(new IncomingValue(compiler, Incoming[i], i));
 
             foreach (Instruction instruction in Instructions)
             {
@@ -107,61 +109,61 @@ namespace Santol.Loader
                         break;
 
                     case Code.Ldc_I4:
-                        PushNode(new LoadPrimitiveConstant(typeSystem.Int32, instruction.Operand));
+                        PushNode(new LoadPrimitiveConstant(compiler, compiler.TypeSystem.Int32, instruction.Operand));
                         break;
                     case Code.Ldc_I8:
-                        PushNode(new LoadPrimitiveConstant(typeSystem.Int64, instruction.Operand));
+                        PushNode(new LoadPrimitiveConstant(compiler, compiler.TypeSystem.Int64, instruction.Operand));
                         break;
                     case Code.Ldc_R4:
-                        PushNode(new LoadPrimitiveConstant(typeSystem.Single, instruction.Operand));
+                        PushNode(new LoadPrimitiveConstant(compiler, compiler.TypeSystem.Single, instruction.Operand));
                         break;
                     case Code.Ldc_R8:
-                        PushNode(new LoadPrimitiveConstant(typeSystem.Double, instruction.Operand));
+                        PushNode(new LoadPrimitiveConstant(compiler, compiler.TypeSystem.Double, instruction.Operand));
                         break;
 
 
                     case Code.Ldloc:
-                        PushNode(new LoadLocal((VariableDefinition) instruction.Operand));
+                        PushNode(new LoadLocal(compiler, (VariableDefinition) instruction.Operand));
                         break;
                     case Code.Ldarg:
-                        PushNode(new LoadArg((ParameterDefinition) instruction.Operand));
+                        PushNode(new LoadArg(compiler, (ParameterDefinition) instruction.Operand));
                         break;
                     case Code.Ldsfld:
-                        PushNode(new LoadStatic((FieldReference) instruction.Operand));
+                        PushNode(new LoadStatic(compiler, (FieldReference) instruction.Operand));
                         break;
                     case Code.Ldfld:
-                        PushNode(new LoadField(PopNode(), (FieldReference) instruction.Operand));
+                        PushNode(new LoadField(compiler, PopNode(), (FieldReference) instruction.Operand));
                         break;
 
                     case Code.Ldind_U1:
-                        PushNode(new LoadDirect(typeSystem.Byte, PopNode()));
+                        PushNode(new LoadDirect(compiler, compiler.TypeSystem.Byte, PopNode()));
                         break;
 
                     case Code.Stloc:
-                        PushNode(new StoreLocal((VariableDefinition) instruction.Operand, PopNode()));
+                        PushNode(new StoreLocal(compiler, (VariableDefinition) instruction.Operand, PopNode()));
                         break;
                     case Code.Stsfld:
-                        PushNode(new StoreStatic((FieldReference) instruction.Operand, PopNode()));
+                        PushNode(new StoreStatic(compiler, (FieldReference) instruction.Operand, PopNode()));
                         break;
 
                     case Code.Stind_I1:
-                        PushNode(new StoreDirect(typeSystem.Byte, PopNode(), PopNode()));
+                        PushNode(new StoreDirect(compiler, compiler.TypeSystem.Byte, PopNode(), PopNode()));
                         break;
 
                     case Code.Conv_I:
-                        PushNode(new Nodes.Convert(typeSystem.IntPtr, PopNode()));
+                        PushNode(new Nodes.Convert(compiler, compiler.TypeSystem.IntPtr, PopNode()));
                         break;
                     case Code.Conv_I8:
-                        PushNode(new Nodes.Convert(typeSystem.Int64, PopNode()));
+                        PushNode(new Nodes.Convert(compiler, compiler.TypeSystem.Int64, PopNode()));
                         break;
                     case Code.Conv_U:
-                        PushNode(new Nodes.Convert(typeSystem.UIntPtr, PopNode()));
+                        PushNode(new Nodes.Convert(compiler, compiler.TypeSystem.UIntPtr, PopNode()));
                         break;
                     case Code.Conv_U1:
-                        PushNode(new Nodes.Convert(typeSystem.Byte, PopNode()));
+                        PushNode(new Nodes.Convert(compiler, compiler.TypeSystem.Byte, PopNode()));
                         break;
                     case Code.Conv_U2:
-                        PushNode(new Nodes.Convert(typeSystem.UInt16, PopNode()));
+                        PushNode(new Nodes.Convert(compiler, compiler.TypeSystem.UInt16, PopNode()));
                         break;
 
                     case Code.Add:
@@ -170,7 +172,7 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not add two different types!");
-                        PushNode(new Numeric(Numeric.Operations.Add, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.Add, lhs, rhs));
                         break;
                     }
                     case Code.Sub:
@@ -179,7 +181,7 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not subtract two different types!");
-                        PushNode(new Numeric(Numeric.Operations.Subtract, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.Subtract, lhs, rhs));
                         break;
                     }
                     case Code.Mul:
@@ -188,7 +190,7 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not multiply two different types!");
-                        PushNode(new Numeric(Numeric.Operations.Multiply, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.Multiply, lhs, rhs));
                         break;
                     }
                     case Code.Div:
@@ -197,7 +199,7 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not divide two different types!");
-                        PushNode(new Numeric(Numeric.Operations.Divide, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.Divide, lhs, rhs));
                         break;
                     }
                     case Code.Rem:
@@ -206,14 +208,14 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not find remainder of two different types!");
-                        PushNode(new Numeric(Numeric.Operations.Remainder, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.Remainder, lhs, rhs));
                         break;
                     }
                     case Code.Shl:
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        PushNode(new Numeric(Numeric.Operations.ShiftLeft, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.ShiftLeft, lhs, rhs));
                         break;
                     }
                     case Code.Or:
@@ -222,7 +224,7 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not or two different types!");
-                        PushNode(new Numeric(Numeric.Operations.Or, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.Or, lhs, rhs));
                         break;
                     }
                     case Code.Xor:
@@ -231,7 +233,7 @@ namespace Santol.Loader
                         NodeReference lhs = PopNode();
                         if (lhs.ResultType != rhs.ResultType)
                             throw new NotSupportedException("Can not xor two different types!");
-                        PushNode(new Numeric(Numeric.Operations.XOr, lhs, rhs));
+                        PushNode(new Numeric(compiler, Numeric.Operations.XOr, lhs, rhs));
                         break;
                     }
 
@@ -239,21 +241,21 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        PushNode(new Comparison(typeSystem, Comparison.Operations.LessThan, lhs, rhs));
+                        PushNode(new Comparison(compiler, Comparison.Operations.LessThan, lhs, rhs));
                         break;
                     }
                     case Code.Cgt:
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        PushNode(new Comparison(typeSystem, Comparison.Operations.GreaterThan, lhs, rhs));
+                        PushNode(new Comparison(compiler, Comparison.Operations.GreaterThan, lhs, rhs));
                         break;
                     }
                     case Code.Ceq:
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        PushNode(new Comparison(typeSystem, Comparison.Operations.Equal, lhs, rhs));
+                        PushNode(new Comparison(compiler, Comparison.Operations.Equal, lhs, rhs));
                         break;
                     }
 
@@ -267,15 +269,33 @@ namespace Santol.Loader
                         for (int i = 0; i < args.Length; i++)
                             args[args.Length - 1 - i] = PopNode();
 
-                        PushNode(new Call(method, args));
+                        PushNode(new Call(compiler, method, args));
                         break;
                     }
+                    case Code.Callvirt:
+                    {
+                        MethodReference method = (MethodReference) instruction.Operand;
+
+                        if (!method.HasThis)
+                            throw new NotImplementedException("Expected this parameter");
+
+                        int argCount = method.Parameters.Count - (method.ExplicitThis ? 1 : 0);
+                        NodeReference[] args = new NodeReference[argCount];
+
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = PopNode();
+
+
+                        PushNode(new CallVirtual(compiler, method, PopNode(), args));
+                        break;
+                    }
+
                     case Code.Br:
                     {
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
                         segment.AddCaller(this, stack.Item1);
-                        PushNode(new Branch(segment, stack.Item2));
+                        PushNode(new Branch(compiler, segment, stack.Item2));
                         return;
                     }
                     case Code.Brtrue:
@@ -286,7 +306,7 @@ namespace Santol.Loader
                         Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
                         segment.AddCaller(this, stack.Item1);
                         elseSegment.AddCaller(this, stack.Item1);
-                        PushNode(new ConditionalBranch(segment, elseSegment, cond, stack.Item2));
+                        PushNode(new ConditionalBranch(compiler, segment, elseSegment, cond, stack.Item2));
                         return;
                     }
                     case Code.Brfalse:
@@ -298,20 +318,20 @@ namespace Santol.Loader
                         segment.AddCaller(this, stack.Item1);
                         elseSegment.AddCaller(this, stack.Item1);
                         //TODO: Check whether this is valid in all cases
-                        PushNode(new ConditionalBranch(elseSegment, segment, cond, stack.Item2));
+                        PushNode(new ConditionalBranch(compiler, elseSegment, segment, cond, stack.Item2));
                         return;
                     }
                     case Code.Blt:
                     {
                         NodeReference v2 = PopNode();
                         NodeReference v1 = PopNode();
-                        NodeReference cond = AddNode(new Comparison(typeSystem, Comparison.Operations.LessThan, v1, v2));
+                        NodeReference cond = AddNode(new Comparison(compiler, Comparison.Operations.LessThan, v1, v2));
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
                         Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
                         segment.AddCaller(this, stack.Item1);
                         elseSegment.AddCaller(this, stack.Item1);
-                        PushNode(new ConditionalBranch(segment, elseSegment, cond, stack.Item2));
+                        PushNode(new ConditionalBranch(compiler, segment, elseSegment, cond, stack.Item2));
                         return;
                     }
                     case Code.Bge:
@@ -319,24 +339,24 @@ namespace Santol.Loader
                         NodeReference v2 = PopNode();
                         NodeReference v1 = PopNode();
                         NodeReference cond =
-                            AddNode(new Comparison(typeSystem, Comparison.Operations.GreaterThanOrEqual, v1, v2));
+                            AddNode(new Comparison(compiler, Comparison.Operations.GreaterThanOrEqual, v1, v2));
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
                         Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
                         segment.AddCaller(this, stack.Item1);
                         elseSegment.AddCaller(this, stack.Item1);
-                        PushNode(new ConditionalBranch(segment, elseSegment, cond, stack.Item2));
+                        PushNode(new ConditionalBranch(compiler, segment, elseSegment, cond, stack.Item2));
                         return;
                     }
                     case Code.Ret:
-                        PushNode(new Return(Method.DoesReturn ? PopNode() : null));
+                        PushNode(new Return(compiler, Method.DoesReturn ? PopNode() : null));
                         return;
                     default:
                     {
                         Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
                         for (int i = 0; i < stack.Item1.Length; i++)
                         {
-                            Console.WriteLine($"{i}: {stack.Item1[i]}   {stack.Item2[i]}");
+                            Console.WriteLine($"{i}: {stack.Item1[i]} {stack.Item2[i]}");
                         }
                         throw new NotImplementedException("Unknown opcode " + instruction);
                     }

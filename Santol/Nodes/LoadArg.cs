@@ -10,12 +10,12 @@ namespace Santol.Nodes
         public override bool HasResult => true;
         public override TypeReference ResultType => Parameter.ParameterType;
 
-        public LoadArg(ParameterDefinition definition)
+        public LoadArg(Compiler compiler, ParameterDefinition definition) : base(compiler)
         {
             Parameter = definition;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
             SetLlvmRef(fgen.GetParam(Slot));
         }

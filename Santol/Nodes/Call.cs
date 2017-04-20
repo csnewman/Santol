@@ -12,17 +12,17 @@ namespace Santol.Nodes
         public override bool HasResult => Method.ReturnType.MetadataType != MetadataType.Void;
         public override TypeReference ResultType => Method.ReturnType;
 
-        public Call(MethodReference method, NodeReference[] arguments)
+        public Call(Compiler compiler, MethodReference method, NodeReference[] arguments) : base(compiler)
         {
             Method = method;
             Arguments = arguments;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
             LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
             for (int i = 0; i < args.Length; i++)
-                args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetLlvmRef(cgen,
+                args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetLlvmRef(
                     Method.Parameters[args.Length - 1 - i].ParameterType);
 
             LLVMValueRef? val = fgen.GenerateCall(Method, args);

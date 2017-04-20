@@ -10,15 +10,15 @@ namespace Santol.Nodes
 
         public object Value { get; }
 
-        public LoadPrimitiveConstant(TypeReference type, object value)
+        public LoadPrimitiveConstant(Compiler compiler, TypeReference type, object value) : base(compiler)
         {
             ResultType = type;
             Value = value;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            SetLlvmRef(cgen.GeneratePrimitiveConstant(ResultType, Value));
+            SetLlvmRef(CodeGenerator.GeneratePrimitiveConstant(ResultType, Value));
         }
 
         public override string ToFullString() => $"LoadPrimitiveConstant [Type: {ResultType}, Value: {Value}]";

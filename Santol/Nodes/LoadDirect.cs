@@ -14,15 +14,15 @@ namespace Santol.Nodes
         public override bool HasResult => true;
         public override TypeReference ResultType { get; }
 
-        public LoadDirect(TypeReference type, NodeReference address)
+        public LoadDirect(Compiler compiler, TypeReference type, NodeReference address) : base(compiler)
         {
             ResultType = type;
             Address = address;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.LoadDirect(Address.GetLlvmRef(cgen, cgen.TypeSystem.UIntPtr)));
+            SetLlvmRef(fgen.LoadDirect(Address.GetLlvmRef(Compiler.TypeSystem.UIntPtr)));
         }
 
         public override string ToFullString() => $"LoadDirect [Address: {Address}, Type: {ResultType}]";

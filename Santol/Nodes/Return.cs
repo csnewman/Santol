@@ -13,14 +13,14 @@ namespace Santol.Nodes
         public override bool HasResult => false;
         public override TypeReference ResultType => null;
 
-        public Return(NodeReference value)
+        public Return(Compiler compiler, NodeReference value) : base(compiler)
         {
             Value = value;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            fgen.Return(HasValue ? (LLVMValueRef?) Value.GetLlvmRef(cgen, fgen.Definition.ReturnType) : null);
+            fgen.Return(HasValue ? (LLVMValueRef?) Value.GetLlvmRef(fgen.Definition.ReturnType) : null);
         }
 
         public override string ToFullString() => $"Return [HasValue: {HasValue}, Value: {Value}]";

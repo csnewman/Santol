@@ -15,16 +15,16 @@ namespace Santol.Nodes
         public override bool HasResult => false;
         public override TypeReference ResultType => null;
 
-        public StoreStatic(FieldReference destination, NodeReference value)
+        public StoreStatic(Compiler compiler, FieldReference destination, NodeReference value) : base(compiler)
         {
             Destination = destination;
             Value = value;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            fgen.StoreDirect(Value.GetLlvmRef(cgen, Destination.FieldType),
-                cgen.GetGlobal(Destination.GetName(), cgen.ConvertType(Destination.FieldType)));
+            fgen.StoreDirect(Value.GetLlvmRef(Destination.FieldType),
+                CodeGenerator.GetGlobal(Destination.GetName(), CodeGenerator.ConvertType(Destination.FieldType)));
         }
 
         public override string ToFullString() => $"StoreStatic [Value: {Value}, Destination: {Destination}]";

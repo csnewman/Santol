@@ -21,37 +21,38 @@ namespace Santol.Nodes
         public override TypeReference ResultType { get; }
         public Operations Operation { get; }
 
-        public Comparison(TypeSystem typeSystem, Operations operation, NodeReference lhs, NodeReference rhs)
+        public Comparison(Compiler compiler, Operations operation, NodeReference lhs, NodeReference rhs)
+            : base(compiler)
         {
             Operation = operation;
             Lhs = lhs;
             Rhs = rhs;
             //TODO: Check whether change from int32 will break CIL code
-            ResultType = typeSystem.Boolean;
+            ResultType = compiler.TypeSystem.Boolean;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
             TypeReference target = TypeHelper.GetMostComplexType(Lhs.ResultType, Rhs.ResultType);
-            LLVMValueRef lhsValue = Lhs.GetLlvmRef(cgen, target);
-            LLVMValueRef rhsValue = Rhs.GetLlvmRef(cgen, target);
+            LLVMValueRef lhsValue = Lhs.GetLlvmRef(target);
+            LLVMValueRef rhsValue = Rhs.GetLlvmRef(target);
 
             switch (Operation)
             {
                 case Operations.LessThan:
-                    SetLlvmRef(cgen, cgen.TypeSystem.Boolean,
+                    SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, lhsValue, rhsValue));
                     break;
                 case Operations.GreaterThan:
-                    SetLlvmRef(cgen, cgen.TypeSystem.Boolean,
+                    SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSGT, lhsValue, rhsValue));
                     break;
                 case Operations.GreaterThanOrEqual:
-                    SetLlvmRef(cgen, cgen.TypeSystem.Boolean,
+                    SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSGE, lhsValue, rhsValue));
                     break;
                 case Operations.Equal:
-                    SetLlvmRef(cgen, cgen.TypeSystem.Boolean,
+                    SetLlvmRef(Compiler.TypeSystem.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntEQ, lhsValue, rhsValue));
                     break;
                 default:

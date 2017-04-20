@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Remoting.Contexts;
 using System.Text;
 using System.Threading.Tasks;
 using LLVMSharp;
@@ -14,31 +15,18 @@ namespace Santol.Generator
 {
     public class CodeGenerator
     {
-        private string _moduleName, _target;
-        public LLVMModuleRef Module { get; }
-        public LLVMContextRef Context { get; }
-        public LLVMBuilderRef Builder { get; }
-        public TypeSystem TypeSystem { get; }
+        public Compiler Compiler { get; }
         private IDictionary<MethodDefinition, FunctionGenerator> _functions;
         private IDictionary<string, LLVMValueRef> _globalRefs, _funcRefs;
-        private IDictionary<string, LoadedType> _types;
         private IDictionary<LoadedType, LLVMTypeRef> _structCache;
 
-        public CodeGenerator(string moduleName, string target, TypeSystem typeSystem,
-            IDictionary<string, LoadedType> types)
+        public CodeGenerator(Compiler compiler)
         {
-            _moduleName = moduleName;
-            _target = target;
-            Module = LLVM.ModuleCreateWithName("Module_" + moduleName);
-            Context = LLVM.GetModuleContext(Module);
-            Builder = LLVM.CreateBuilder();
-            LLVM.SetTarget(Module, target);
-            TypeSystem = typeSystem;
+            Compiler = compiler;
             _functions = new Dictionary<MethodDefinition, FunctionGenerator>();
             _globalRefs = new Dictionary<string, LLVMValueRef>();
             _funcRefs = new Dictionary<string, LLVMValueRef>();
             _structCache = new Dictionary<LoadedType, LLVMTypeRef>();
-            _types = types;
         }
 
         public FunctionGenerator DefineFunction(MethodDefinition definition)
@@ -57,7 +45,7 @@ namespace Santol.Generator
                 return _funcRefs[name];
 
             LLVMTypeRef functionType = GetFunctionType(definition);
-            LLVMValueRef @ref = LLVM.AddFunction(Module, definition.GetName(), functionType);
+            LLVMValueRef @ref = LLVM.AddFunction(Compiler.Module, definition.GetName(), functionType);
             LLVM.SetLinkage(@ref, LLVMLinkage.LLVMAvailableExternallyLinkage);
             _funcRefs[name] = @ref;
             return @ref;
@@ -89,7 +77,7 @@ namespace Santol.Generator
             if (_globalRefs.ContainsKey(name))
                 return _globalRefs[name];
 
-            LLVMValueRef @ref = LLVM.AddGlobal(Module, type, name);
+            LLVMValueRef @ref = LLVM.AddGlobal(Compiler.Module, type, name);
             _globalRefs[name] = @ref;
             return @ref;
         }
@@ -104,42 +92,42 @@ namespace Santol.Generator
             switch (reference.MetadataType)
             {
                 case MetadataType.Void:
-                    return LLVM.VoidTypeInContext(Context);
+                    return LLVM.VoidTypeInContext(Compiler.Context);
                 case MetadataType.Boolean:
-                    return LLVM.Int1TypeInContext(Context);
+                    return LLVM.Int1TypeInContext(Compiler.Context);
 
                 case MetadataType.Byte:
                 case MetadataType.SByte:
-                    return LLVM.Int8TypeInContext(Context);
+                    return LLVM.Int8TypeInContext(Compiler.Context);
 
                 case MetadataType.Char:
                 case MetadataType.UInt16:
                 case MetadataType.Int16:
-                    return LLVM.Int16TypeInContext(Context);
+                    return LLVM.Int16TypeInContext(Compiler.Context);
 
                 case MetadataType.UInt32:
                 case MetadataType.Int32:
-                    return LLVM.Int32TypeInContext(Context);
+                    return LLVM.Int32TypeInContext(Compiler.Context);
 
                 case MetadataType.UInt64:
                 case MetadataType.Int64:
-                    return LLVM.Int64TypeInContext(Context);
+                    return LLVM.Int64TypeInContext(Compiler.Context);
 
                 case MetadataType.Single:
-                    return LLVM.FloatTypeInContext(Context);
+                    return LLVM.FloatTypeInContext(Compiler.Context);
                 case MetadataType.Double:
-                    return LLVM.DoubleTypeInContext(Context);
+                    return LLVM.DoubleTypeInContext(Compiler.Context);
 
                 case MetadataType.IntPtr:
                 case MetadataType.UIntPtr:
-                    return LLVM.PointerType(LLVM.Int8TypeInContext(Context), 0);
+                    return LLVM.PointerType(LLVM.Int8TypeInContext(Compiler.Context), 0);
 
                 case MetadataType.Pointer:
                     return LLVM.PointerType(ConvertType(reference.GetElementType()), 0);
 
                 case MetadataType.ValueType:
                 {
-                    LoadedType def = _types[reference.FullName];
+                    LoadedType def = Resolve(reference);
                     if (def.IsEnum)
                         return ConvertType(def.EnumType);
                     return GetStructType(def);
@@ -173,7 +161,7 @@ namespace Santol.Generator
             if (_structCache.ContainsKey(ltype))
                 return _structCache[ltype];
 
-            LLVMTypeRef type = LLVM.StructCreateNamed(Context, ltype.Definition.GetName());
+            LLVMTypeRef type = LLVM.StructCreateNamed(Compiler.Context, ltype.Definition.GetName());
             _structCache[ltype] = type;
 
             if (ltype.Definition.PackingSize > 1)
@@ -247,19 +235,20 @@ namespace Santol.Generator
             }
         }
 
+        public LoadedType Resolve(TypeReference @ref)
+        {
+            return Compiler.Resolve(@ref.FullName);
+        }
+
         public bool IsEnum(TypeReference @ref)
         {
-            return _types.ContainsKey(@ref.FullName) && _types[@ref.FullName].IsEnum;
+            LoadedType type = Resolve(@ref);
+            return type != null && type.IsEnum;
         }
 
         public TypeReference GetEnumType(TypeReference @ref)
         {
             return IsEnum(@ref) ? Resolve(@ref).EnumType : null;
-        }
-
-        public LoadedType Resolve(TypeReference @ref)
-        {
-            return _types.ContainsKey(@ref.FullName) ? _types[@ref.FullName] : null;
         }
 
         public LLVMValueRef GenerateConversion(TypeReference sourceType, TypeReference destType, LLVMValueRef value)
@@ -289,7 +278,7 @@ namespace Santol.Generator
                     switch (destType.MetadataType)
                     {
                         case MetadataType.Int32:
-                            return LLVM.BuildZExt(Builder, value, ConvertType(destType), "");
+                            return LLVM.BuildZExt(Compiler.Builder, value, ConvertType(destType), "");
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
@@ -298,9 +287,9 @@ namespace Santol.Generator
                     switch (destType.MetadataType)
                     {
                         case MetadataType.Byte:
-                            return LLVM.BuildTrunc(Builder, value, ConvertType(destType), "");
+                            return LLVM.BuildTrunc(Compiler.Builder, value, ConvertType(destType), "");
                         case MetadataType.Int32:
-                            return LLVM.BuildZExt(Builder, value, ConvertType(destType), "");
+                            return LLVM.BuildZExt(Compiler.Builder, value, ConvertType(destType), "");
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
@@ -333,11 +322,11 @@ namespace Santol.Generator
                         case MetadataType.Boolean:
                         case MetadataType.Char:
                         case MetadataType.UInt16:
-                            return LLVM.BuildTrunc(Builder, value, ConvertType(destType), "");
+                            return LLVM.BuildTrunc(Compiler.Builder, value, ConvertType(destType), "");
                         case MetadataType.IntPtr:
-                            return LLVM.BuildIntToPtr(Builder, value, ConvertType(destType), "");
+                            return LLVM.BuildIntToPtr(Compiler.Builder, value, ConvertType(destType), "");
                         case MetadataType.Int64:
-                            return LLVM.BuildSExt(Builder, value, ConvertType(destType), "");
+                            return LLVM.BuildSExt(Compiler.Builder, value, ConvertType(destType), "");
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
@@ -366,35 +355,6 @@ namespace Santol.Generator
                 default:
                     throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
             }
-        }
-
-        public void Optimise(LLVMPassManagerRef passManagerRef)
-        {
-            LLVM.RunPassManager(passManagerRef, Module);
-        }
-
-        public void Dump()
-        {
-            LLVM.DumpModule(Module);
-        }
-
-        public void Compile()
-        {
-            LLVMTargetRef tref;
-            IntPtr error;
-            LLVM.GetTargetFromTriple(_target, out tref, out error);
-
-            LLVMTargetMachineRef machineRef = LLVM.CreateTargetMachine(tref, _target,
-                "generic", "",
-                LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault, LLVMRelocMode.LLVMRelocDefault,
-                LLVMCodeModel.LLVMCodeModelDefault);
-
-            LLVM.TargetMachineEmitToFile(machineRef, Module,
-                Marshal.StringToHGlobalAnsi(_moduleName + ".o"),
-                LLVMCodeGenFileType.LLVMObjectFile,
-                out error);
-
-            LLVM.PrintModuleToFile(Module, _moduleName + ".ll", out error);
         }
     }
 }

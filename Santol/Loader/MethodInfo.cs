@@ -16,82 +16,13 @@ namespace Santol.Loader
         public ILProcessor Processor { get; }
         public bool DoesReturn => Definition.ReturnType.MetadataType != MetadataType.Void;
         public IList<CodeSegment> Segments { get; set; }
+        private CodeRegion _baseRegion;
 
         public MethodInfo(MMethodDefinition definition)
         {
             Definition = definition;
             Body = definition.Body;
             Processor = Body.GetILProcessor();
-        }
-        
-        public void PrintInstructions()
-        {
-            //Find all jump destinations
-            IList<Instruction> jumpDestinations = GetJumpDestinations();
-
-            Console.WriteLine("  Instuctions:");
-            foreach (Instruction instruction in Body.Instructions)
-            {
-                if (jumpDestinations.Contains(instruction))
-                {
-                    Console.WriteLine($"    JUMP_POINT:");
-                }
-                Console.WriteLine("      " + instruction);
-
-                if (instruction.OpCode.FlowControl == FlowControl.Phi)
-                    throw new Exception($"Phi: {instruction}");
-
-                if (instruction.OpCode.FlowControl == FlowControl.Break)
-                    throw new Exception($"Break: {instruction}");
-            }
-        }
-
-        public void PrintSegments()
-        {
-            Console.WriteLine("  Segments:");
-            foreach (CodeSegment segment in Segments)
-            {
-                Console.WriteLine($"    {segment.Name}:");
-                Console.WriteLine($"      Force No Incomings: {segment.ForceNoIncomings}");
-                Console.WriteLine(
-                    $"      Incoming: {(!segment.HasIncoming ? "none" : string.Join<TypeReference>(",", segment.Incoming))}");
-                Console.WriteLine($"      Calls: {segment.Callers.Count}");
-                Console.WriteLine($"      End Point: {segment.IsEndPoint}");
-                foreach (Node node in segment.Nodes)
-                {
-                    Console.WriteLine("        " + node.ToFullString());
-                }
-            }
-        }
-
-        public int FixMidBranches()
-        {
-            int @fixed = 0;
-            for (int pass = 0; pass < 2; pass++)
-            {
-                //Find all mid jumps
-                IList<Instruction> midJumps = new List<Instruction>();
-                foreach (Instruction instruction in Body.Instructions)
-                {
-                    OpCode code = instruction.OpCode;
-                    if (code.FlowControl == FlowControl.Cond_Branch && instruction.Next != null &&
-                        instruction.Next.OpCode.FlowControl != FlowControl.Branch)
-                    {
-                        midJumps.Add(instruction);
-                    }
-                }
-
-                //Insert fixed jump
-                foreach (Instruction instruction in midJumps)
-                    Processor.InsertAfter(instruction, Processor.Create(OpCodes.Br, instruction.Next));
-
-                //Ensure first pass fixed all mid jumps
-                if (pass == 0)
-                    @fixed = midJumps.Count;
-                else if (midJumps.Count != 0)
-                    throw new NotSupportedException("Unable to break up branches");
-            }
-            return @fixed;
         }
 
         private IList<Instruction> GetJumpDestinations()
@@ -118,6 +49,23 @@ namespace Santol.Loader
                 }
             }
 
+            //Add exception handlers
+            foreach (ExceptionHandler exceptionHandler in Body.ExceptionHandlers.Reverse())
+            {
+                jumpDestinations.AddOpt(exceptionHandler.TryStart);
+
+                switch (exceptionHandler.HandlerType)
+                {
+                    case ExceptionHandlerType.Finally:
+                    case ExceptionHandlerType.Catch:
+                        jumpDestinations.AddOpt(exceptionHandler.HandlerStart);
+                        break;
+                    case ExceptionHandlerType.Filter:
+                    case ExceptionHandlerType.Fault:
+                        throw new NotSupportedException();
+                }
+            }
+
             //AddInts first instruction if missing
             Instruction firstInst = Body.Instructions.Count > 0 ? Body.Instructions[0] : null;
             if (firstInst != null && !jumpDestinations.Contains(firstInst))
@@ -126,44 +74,102 @@ namespace Santol.Loader
             return jumpDestinations;
         }
 
-        public int FixFallthroughs()
+        public void FixMidBranches()
         {
-            int @fixed = 0;
-            for (int pass = 0; pass < 2; pass++)
+            //Find all mid jumps
+            IList<Instruction> midJumps = new List<Instruction>();
+            foreach (Instruction instruction in Body.Instructions)
             {
-                //Find all jump destinations
-                IList<Instruction> jumpDestinations = GetJumpDestinations();
-
-                //Find all end points
-                List<Instruction> endPoints = new List<Instruction>();
-                foreach (Instruction instruction in Body.Instructions)
-                    if (jumpDestinations.Contains(instruction) && instruction.Previous != null)
-                        endPoints.Add(instruction.Previous);
-
-
-                //Checks for fallthroughs
-                int fixCount = 0;
-                foreach (Instruction instruction in endPoints)
-                {
-                    OpCode code = instruction.OpCode;
-                    if (code.FlowControl == FlowControl.Break)
-                        throw new NotImplementedException("Breaks have not been checked");
-
-                    if (code.FlowControl != FlowControl.Branch && code.FlowControl != FlowControl.Return)
-                    {
-                        //Fixes fallthrough
-                        Processor.InsertAfter(instruction, Processor.Create(OpCodes.Br, instruction.Next));
-                        fixCount++;
-                    }
-                }
-
-                //Ensure first pass fixed fallthroughs
-                if (pass == 0)
-                    @fixed = fixCount;
-                else if (fixCount != 0)
-                    throw new NotSupportedException("Unable to fix fallthroughs");
+                OpCode code = instruction.OpCode;
+                if (code.FlowControl == FlowControl.Cond_Branch && instruction.Next != null &&
+                    instruction.Next.OpCode.FlowControl != FlowControl.Branch)
+                    midJumps.Add(instruction);
             }
-            return @fixed;
+
+            //Insert fixed jump
+            foreach (Instruction instruction in midJumps)
+                Processor.InsertAfter(instruction, Processor.Create(OpCodes.Br, instruction.Next));
+        }
+
+        public void FixFallthroughs()
+        {
+            //Find all jump destinations
+            IList<Instruction> jumpDestinations = GetJumpDestinations();
+
+            //Find all end points
+            List<Instruction> endPoints = new List<Instruction>();
+            foreach (Instruction instruction in Body.Instructions)
+                if (jumpDestinations.Contains(instruction) && instruction.Previous != null)
+                    endPoints.Add(instruction.Previous);
+
+
+            //Checks for fallthroughs
+            foreach (Instruction instruction in endPoints)
+            {
+                OpCode code = instruction.OpCode;
+                if (code.FlowControl == FlowControl.Break)
+                    throw new NotImplementedException("Breaks have not been checked");
+
+                if (code.FlowControl != FlowControl.Branch && code.FlowControl != FlowControl.Return)
+                    Processor.InsertAfter(instruction, Processor.Create(OpCodes.Br, instruction.Next));
+            }
+        }
+
+        public void PrintInstructions()
+        {
+            //Find all jump destinations
+            IList<Instruction> jumpDestinations = GetJumpDestinations();
+
+            Console.WriteLine("  Instuctions:");
+            foreach (Instruction instruction in Body.Instructions)
+            {
+                if (jumpDestinations.Contains(instruction))
+                    Console.WriteLine($"    JUMP_POINT:");
+                Console.WriteLine("      " + instruction);
+
+                if (instruction.OpCode.FlowControl == FlowControl.Phi)
+                    throw new Exception($"Phi: {instruction}");
+
+                if (instruction.OpCode.FlowControl == FlowControl.Break)
+                    throw new Exception($"Break: {instruction}");
+            }
+        }
+
+        public void ParseRegions()
+        {
+            _baseRegion = new CodeRegion(CodeRegion.RegionType.Root,
+                new InstructionRange(Body.Instructions.First(), Body.Instructions.Last()), null);
+
+            foreach (ExceptionHandler exceptionHandler in Body.ExceptionHandlers.Reverse())
+            {
+                CodeRegion tryRegion = _baseRegion.AddRegion(CodeRegion.RegionType.Try,
+                    new InstructionRange(exceptionHandler.TryStart,
+                        exceptionHandler.TryEnd.Previous), null);
+
+                switch (exceptionHandler.HandlerType)
+                {
+                    case ExceptionHandlerType.Catch:
+                        _baseRegion.AddRegion(CodeRegion.RegionType.Catch,
+                            new InstructionRange(exceptionHandler.HandlerStart,
+                                exceptionHandler.HandlerEnd.Previous), tryRegion);
+                        break;
+                    case ExceptionHandlerType.Finally:
+                        _baseRegion.AddRegion(CodeRegion.RegionType.Finally,
+                            new InstructionRange(exceptionHandler.HandlerStart,
+                                exceptionHandler.HandlerEnd.Previous), tryRegion);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+            }
+
+            _baseRegion.EnsureEdges(GetJumpDestinations());
+        }
+
+        public void PrintRegions()
+        {
+            Console.WriteLine("  Regions:");
+            _baseRegion.PrintTree("    ");
         }
 
         public void GenerateSegments()
@@ -178,7 +184,7 @@ namespace Santol.Loader
                 //Start new segment on first instruction
                 if (jumpDestinations.Contains(instruction))
                 {
-                    currentSegment = new CodeSegment(this, "seg_" + (segmentLId++));
+                    currentSegment = new CodeSegment(this, "seg_" + segmentLId++, _baseRegion.GetRegion(instruction));
                     Segments.Add(currentSegment);
                 }
                 if (currentSegment == null)
@@ -201,7 +207,6 @@ namespace Santol.Loader
                 //Mark segments with only backward control flows
                 OpCode code = instruction.OpCode;
                 if (code.FlowControl == FlowControl.Branch || code.FlowControl == FlowControl.Cond_Branch)
-                {
                     switch (code.OperandType)
                     {
                         case OperandType.ShortInlineBrTarget:
@@ -215,10 +220,43 @@ namespace Santol.Loader
                             throw new NotImplementedException("Unknown branch instruction " + instruction + "  " +
                                                               instruction.Operand.GetType());
                     }
-                }
                 else if (instruction.Previous != null && instruction.Previous.OpCode.FlowControl == FlowControl.Branch &&
                          !jumpDestinations.Contains(instruction))
                     GetSegment(instruction).ForceNoIncomings = true;
+            }
+
+            //Mark exception handlers
+            foreach (ExceptionHandler exceptionHandler in Body.ExceptionHandlers.Reverse())
+            {
+                GetSegment(exceptionHandler.TryStart).ForceNoIncomings = true;
+
+                switch (exceptionHandler.HandlerType)
+                {
+                    case ExceptionHandlerType.Finally:
+                    case ExceptionHandlerType.Catch:
+                        GetSegment(exceptionHandler.HandlerStart).ForceNoIncomings = true;
+                        break;
+                    case ExceptionHandlerType.Filter:
+                    case ExceptionHandlerType.Fault:
+                        throw new NotSupportedException();
+                }
+            }
+        }
+
+        public void PrintSegments()
+        {
+            Console.WriteLine("  Segments:");
+            foreach (CodeSegment segment in Segments)
+            {
+                Console.WriteLine($"    {segment.Name}:");
+                Console.WriteLine(
+                    $"      Incoming: {(segment.ForceNoIncomings ? "forced none" : !segment.HasIncoming ? "none" : string.Join<TypeReference>(",", segment.Incoming))}");
+                Console.WriteLine(
+                    $"      Region: {segment.Region.Type} ({segment.Region.Range.Start.Offset}-{segment.Region.Range.End.Offset})");
+                Console.WriteLine($"      Calls: {segment.Callers.Count}");
+                //                Console.WriteLine($"      End Point: {segment.IsEndPoint}");
+                foreach (Node node in segment.Nodes)
+                    Console.WriteLine("        " + node.ToFullString());
             }
         }
     }

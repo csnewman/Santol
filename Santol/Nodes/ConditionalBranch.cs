@@ -16,8 +16,9 @@ namespace Santol.Nodes
         public override bool HasResult => false;
         public override TypeReference ResultType => null;
 
-        public ConditionalBranch(CodeSegment segment, CodeSegment elseSegment, NodeReference condition,
-            NodeReference[] values)
+        public ConditionalBranch(Compiler compiler, CodeSegment segment, CodeSegment elseSegment,
+            NodeReference condition,
+            NodeReference[] values) : base(compiler)
         {
             Segment = segment;
             ElseSegment = elseSegment;
@@ -25,16 +26,16 @@ namespace Santol.Nodes
             Values = values;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            LLVMValueRef condValueRef = Condition.GetLlvmRef(cgen, cgen.TypeSystem.Boolean);
+            LLVMValueRef condValueRef = Condition.GetLlvmRef(Compiler.TypeSystem.Boolean);
 
             LLVMValueRef[] vals = new LLVMValueRef[Values.Length];
             if (Segment.HasIncoming)
             {
                 TypeReference[] targetTypes = Segment.Incoming;
                 for (int i = 0; i < Values.Length; i++)
-                    vals[Values.Length - 1 - i] = Values[i].GetLlvmRef(cgen, targetTypes[i]);
+                    vals[Values.Length - 1 - i] = Values[i].GetLlvmRef(targetTypes[i]);
             }
             fgen.BranchConditional(condValueRef, Segment, ElseSegment, vals);
         }

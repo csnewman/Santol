@@ -14,14 +14,15 @@ namespace Santol.Nodes
         public override bool HasResult => true;
         public override TypeReference ResultType => Field.FieldType;
 
-        public LoadStatic(FieldReference definition)
+        public LoadStatic(Compiler compiler, FieldReference definition) : base(compiler)
         {
             Field = definition;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.LoadDirect(cgen.GetGlobal(Field.GetName(), cgen.ConvertType(Field.FieldType))));
+            SetLlvmRef(
+                fgen.LoadDirect(CodeGenerator.GetGlobal(Field.GetName(), CodeGenerator.ConvertType(Field.FieldType))));
         }
 
         public override string ToFullString() => $"LoadLocal [Field: {Field}, Type: {ResultType}]";

@@ -8,13 +8,17 @@ namespace Santol.Nodes
 {
     public abstract class Node
     {
+        protected readonly Compiler Compiler;
+        protected CodeGenerator CodeGenerator => Compiler.CodeGenerator;
+
         private readonly IList<NodeReference> _references;
         private LLVMValueRef _llvmRef;
         public abstract bool HasResult { get; }
         public abstract TypeReference ResultType { get; }
 
-        protected Node()
+        protected Node(Compiler compiler)
         {
+            Compiler = compiler;
             _references = new List<NodeReference>();
         }
 
@@ -25,11 +29,11 @@ namespace Santol.Nodes
             return @ref;
         }
 
-        public abstract void Generate(CodeGenerator cgen, FunctionGenerator fgen);
+        public abstract void Generate(FunctionGenerator fgen);
 
-        protected void SetLlvmRef(CodeGenerator cgen, TypeReference from, LLVMValueRef @ref)
+        protected void SetLlvmRef(TypeReference from, LLVMValueRef @ref)
         {
-            _llvmRef = cgen.GenerateConversion(from, ResultType, @ref);
+            _llvmRef = CodeGenerator.GenerateConversion(from, ResultType, @ref);
         }
 
         protected void SetLlvmRef(LLVMValueRef @ref)
@@ -37,16 +41,16 @@ namespace Santol.Nodes
             _llvmRef = @ref;
         }
 
-        public LLVMValueRef GetLlvmRef(CodeGenerator cgen, TypeReference target)
+        public LLVMValueRef GetLlvmRef(TypeReference target)
         {
-            return cgen.GenerateConversion(ResultType, target, _llvmRef);
+            return CodeGenerator.GenerateConversion(ResultType, target, _llvmRef);
         }
 
         public LLVMValueRef GetLlvmRef()
         {
             return _llvmRef;
         }
-        
+
         public abstract string ToFullString();
     }
 
@@ -60,7 +64,7 @@ namespace Santol.Nodes
             Node = node;
         }
 
-        public LLVMValueRef GetLlvmRef(CodeGenerator cgen, TypeReference target) => Node.GetLlvmRef(cgen, target);
+        public LLVMValueRef GetLlvmRef(TypeReference target) => Node.GetLlvmRef(target);
 
         public LLVMValueRef GetLlvmRef() => Node.GetLlvmRef();
     }

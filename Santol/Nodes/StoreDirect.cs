@@ -12,16 +12,17 @@ namespace Santol.Nodes
         public override bool HasResult => false;
         public override TypeReference ResultType => null;
 
-        public StoreDirect(TypeReference type, NodeReference value, NodeReference address)
+        public StoreDirect(Compiler compiler, TypeReference type, NodeReference value, NodeReference address)
+            : base(compiler)
         {
             Type = type;
             Value = value;
             Address = address;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            fgen.StoreDirect(Value.GetLlvmRef(cgen, Type), Address.GetLlvmRef(cgen, cgen.TypeSystem.UIntPtr));
+            fgen.StoreDirect(Value.GetLlvmRef(Type), Address.GetLlvmRef(Compiler.TypeSystem.UIntPtr));
         }
 
         public override string ToFullString()

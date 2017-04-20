@@ -17,13 +17,13 @@ namespace Santol.Nodes
         public override bool HasResult => true;
         public override TypeReference ResultType => Field.FieldType;
 
-        public LoadField(NodeReference @object, FieldReference field)
+        public LoadField(Compiler compiler, NodeReference @object, FieldReference field) : base(compiler)
         {
             Object = @object;
             Field = field;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
             TypeReference objType = Object.ResultType;
 
@@ -49,7 +49,7 @@ namespace Santol.Nodes
             switch (objType.MetadataType)
             {
                 case MetadataType.ValueType:
-                    LoadedType def = cgen.Resolve(objType);
+                    LoadedType def = CodeGenerator.Resolve(objType);
                     if (def.IsEnum)
                         throw new NotSupportedException("Fields should not be accessed on enum!");
 

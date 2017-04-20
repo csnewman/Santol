@@ -120,16 +120,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Loader\AssemblyLoader.cs" />
+    <Compile Include="Compiler.cs" />
     <Compile Include="Generator\ModuleGenerator.cs" />
+    <Compile Include="Loader\CodeRegion.cs" />
     <Compile Include="Loader\CodeSegment.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Generator\CodeGenerator.cs" />
     <Compile Include="Generator\FunctionGenerator.cs" />
+    <Compile Include="Loader\InstructionRange.cs" />
     <Compile Include="Loader\LoadedType.cs" />
     <Compile Include="Loader\MethodInfo.cs" />
     <Compile Include="Nodes\Branch.cs" />
     <Compile Include="Nodes\Call.cs" />
+    <Compile Include="Nodes\CallVirtual.cs" />
     <Compile Include="Nodes\Comparison.cs" />
     <Compile Include="Nodes\ConditionalBranch.cs" />
     <Compile Include="Nodes\Convert.cs" />

@@ -13,20 +13,20 @@ namespace Santol.Nodes
         public override bool HasResult => false;
         public override TypeReference ResultType => null;
 
-        public Branch(CodeSegment segment, NodeReference[] values)
+        public Branch(Compiler compiler, CodeSegment segment, NodeReference[] values) : base(compiler)
         {
             Segment = segment;
             Values = values;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
             LLVMValueRef[] vals = new LLVMValueRef[Values.Length];
             if (Segment.HasIncoming)
             {
                 TypeReference[] targetTypes = Segment.Incoming;
                 for (int i = 0; i < Values.Length; i++)
-                    vals[Values.Length - 1 - i] = Values[i].GetLlvmRef(cgen, targetTypes[i]);
+                    vals[Values.Length - 1 - i] = Values[i].GetLlvmRef(targetTypes[i]);
             }
 
             fgen.Branch(Segment, vals);

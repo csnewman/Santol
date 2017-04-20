@@ -10,15 +10,15 @@ namespace Santol.Nodes
         public override bool HasResult => true;
         public override TypeReference ResultType { get; }
 
-        public Convert(TypeReference type, NodeReference value)
+        public Convert(Compiler compiler, TypeReference type, NodeReference value) : base(compiler)
         {
             Value = value;
             ResultType = type;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
-            SetLlvmRef(Value.GetLlvmRef(cgen, ResultType));
+            SetLlvmRef(Value.GetLlvmRef(ResultType));
         }
 
         public override string ToFullString() => $"Convert [Value: {Value}, Target: {ResultType}]";

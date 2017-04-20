@@ -14,17 +14,17 @@ namespace Santol.Nodes
         public override bool HasResult => true;
         public override TypeReference ResultType { get; }
 
-        public IncomingValue(TypeReference type, int slot)
+        public IncomingValue(Compiler compiler, TypeReference type, int slot) : base(compiler)
         {
             ResultType = type;
             Slot = slot;
         }
 
-        public override void Generate(CodeGenerator cgen, FunctionGenerator fgen)
+        public override void Generate(FunctionGenerator fgen)
         {
             SetLlvmRef(fgen.CurrentPhis[Slot]);
         }
-        
+
         public override string ToFullString() => $"IncomingValue [Slot: {Slot}, Result: {ResultType}]";
     }
 }
