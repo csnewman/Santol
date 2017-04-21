@@ -337,6 +337,8 @@ namespace Santol.Generator
                         case MetadataType.UInt64:
                             //TODO: Check
                             return value;
+                        case MetadataType.UIntPtr:
+                            return LLVM.BuildIntToPtr(Compiler.Builder, value, ConvertType(destType), "");
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }

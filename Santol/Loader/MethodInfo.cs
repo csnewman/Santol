@@ -262,8 +262,8 @@ namespace Santol.Loader
                 Console.WriteLine(
                     $"      Region: {segment.Region.Type} ({segment.Region.Range.Start.Offset}-{segment.Region.Range.End.Offset})");
                 Console.WriteLine($"      Calls: {segment.Callers.Count}");
-                foreach (Node node in segment.Nodes)
-                    Console.WriteLine("        " + node.ToFullString());
+                foreach (NodeReference node in segment.Nodes)
+                    Console.WriteLine("        " + node.Node.ToFullString());
             }
         }
     }

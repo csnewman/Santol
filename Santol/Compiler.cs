@@ -111,7 +111,7 @@ namespace Santol
             {
                 LLVM.ConstInt(LLVM.Int32Type(), 2, false),
                 LLVM.MDString("Dwarf Version", (uint) "Dwarf Version".Length),
-                LLVM.ConstInt(LLVM.Int32Type(), 2, false)
+                LLVM.ConstInt(LLVM.Int32Type(), 4, false)
             }));
             LLVM.AddNamedMetadataOperand(Module, "llvm.module.flags", LLVM.MDNode(new[]
             {
@@ -183,7 +183,10 @@ namespace Santol
                 method.GenerateSegments();
                 method.DetectNoIncomings();
                 foreach (CodeSegment segment in method.Segments)
+                {
                     segment.ParseInstructions(this);
+                    segment.PatchNodes(this);
+                }
 //                method.PrintSegments();
                 staticMethods.Add(method);
             }
@@ -244,8 +247,8 @@ namespace Santol
             {
                 fgen.SelectBlock(segment);
 
-                foreach (Node node in segment.Nodes)
-                    node.Generate(fgen);
+                foreach (NodeReference node in segment.Nodes)
+                    node.Node.Generate(fgen);
             }
         }
 

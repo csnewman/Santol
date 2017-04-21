@@ -17,7 +17,7 @@ namespace Santol.Loader
         public TypeReference[] Incoming { get; set; }
         public CodeRegion Region { get; }
         public IList<CodeSegment> Callers { get; }
-        public IList<Node> Nodes { get; }
+        public IList<NodeReference> Nodes { get; }
         private Stack<Node> _nodeStack;
 
         public CodeSegment(MethodInfo method, string name, CodeRegion region)
@@ -25,7 +25,7 @@ namespace Santol.Loader
             Method = method;
             Name = name;
             Instructions = new List<Instruction>();
-            Nodes = new List<Node>();
+            Nodes = new List<NodeReference>();
             Region = region;
             Callers = new List<CodeSegment>();
         }
@@ -61,14 +61,14 @@ namespace Santol.Loader
 
         private void PushNode(Node node)
         {
-            Nodes.Add(node);
+            Nodes.Add(node.TakeReference());
             if (node.HasResult)
                 _nodeStack.Push(node);
         }
 
         private NodeReference AddNode(Node node)
         {
-            Nodes.Add(node);
+            Nodes.Add(node.TakeReference());
             return node.TakeReference();
         }
 
@@ -358,6 +358,24 @@ namespace Santol.Loader
                             Console.WriteLine($"{i}: {stack.Item1[i]} {stack.Item2[i]}");
                         }
                         throw new NotImplementedException("Unknown opcode " + instruction);
+                    }
+                }
+            }
+        }
+
+        public void PatchNodes(Compiler compiler)
+        {
+            foreach (NodeReference nodeRef in Nodes)
+            {
+                Node oldNode = nodeRef.Node;
+                if (oldNode is Call)
+                {
+                    Call callNode = (Call) oldNode;
+                    string methodName = callNode.Method.GetName();
+
+                    if (methodName.Equals("System_UIntPtr____op_Explicit___System_UInt64___System_UIntPtr"))
+                    {
+                        oldNode.Replace(new Nodes.Convert(compiler, compiler.TypeSystem.UIntPtr, callNode.Arguments[0]));
                     }
                 }
             }
