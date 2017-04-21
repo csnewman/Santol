@@ -12,6 +12,7 @@ using Mono.Cecil.Rocks;
 using Santol.Generator;
 using Santol.Loader;
 using Santol.Nodes;
+using Santol.Patchers;
 
 namespace Santol
 {
@@ -29,7 +30,8 @@ namespace Santol
         public LLVMMetadataRef CompileUnit { get; private set; }
         public TypeSystem TypeSystem { get; private set; }
         public CodeGenerator CodeGenerator { get; private set; }
-        public IDictionary<string, LoadedType> _loadedTypes;
+        public IList<ISegmentPatcher> SegmentPatchers { get; } = new List<ISegmentPatcher>();
+        private IDictionary<string, LoadedType> _loadedTypes;
 
         public int OptimisationLevel
         {
@@ -183,10 +185,12 @@ namespace Santol
                 method.GenerateSegments();
                 method.DetectNoIncomings();
                 foreach (CodeSegment segment in method.Segments)
-                {
                     segment.ParseInstructions(this);
-                    segment.PatchNodes(this);
-                }
+
+                foreach (ISegmentPatcher segmentPatcher in SegmentPatchers)
+                foreach (CodeSegment segment in method.Segments)
+                    segmentPatcher.Patch(this, method, segment);
+
 //                method.PrintSegments();
 
                 if (methodD.IsStatic)

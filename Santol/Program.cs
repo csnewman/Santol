@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using LLVMSharp;
 using Santol.Loader;
 using Santol.Generator;
+using Santol.Patchers;
 
 namespace Santol
 {
@@ -16,8 +17,10 @@ namespace Santol
             compiler.TargetPlatform = "i386-pc-none-elf";
             compiler.OptimisationLevel = 3;
 
+            compiler.SegmentPatchers.Add(new PrimitiveSegmentPatcher());
+
             compiler.Compile("Rowan.dll", "Rowan.o");
-            
+
             Console.WriteLine("Done");
             Console.ReadLine();
         }

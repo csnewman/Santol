@@ -121,7 +121,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler.cs" />
-    <Compile Include="Generator\ModuleGenerator.cs" />
     <Compile Include="Loader\CodeRegion.cs" />
     <Compile Include="Loader\CodeSegment.cs" />
     <Compile Include="Extensions.cs" />
@@ -143,12 +142,16 @@
     <Compile Include="Nodes\LoadLocal.cs" />
     <Compile Include="Nodes\LoadPrimitiveConstant.cs" />
     <Compile Include="Nodes\LoadStatic.cs" />
+    <Compile Include="Nodes\NewObject.cs" />
     <Compile Include="Nodes\Node.cs" />
     <Compile Include="Nodes\Numeric.cs" />
     <Compile Include="Nodes\Return.cs" />
     <Compile Include="Nodes\StoreDirect.cs" />
+    <Compile Include="Nodes\StoreField.cs" />
     <Compile Include="Nodes\StoreLocal.cs" />
     <Compile Include="Nodes\StoreStatic.cs" />
+    <Compile Include="Patchers\ISegmentPatcher.cs" />
+    <Compile Include="Patchers\PrimitiveSegmentPatcher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TypeHelper.cs" />

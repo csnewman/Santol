@@ -362,23 +362,5 @@ namespace Santol.Loader
                 }
             }
         }
-
-        public void PatchNodes(Compiler compiler)
-        {
-            foreach (NodeReference nodeRef in Nodes)
-            {
-                Node oldNode = nodeRef.Node;
-                if (oldNode is Call)
-                {
-                    Call callNode = (Call) oldNode;
-                    string methodName = callNode.Method.GetName();
-
-                    if (methodName.Equals("System_UIntPtr____op_Explicit___System_UInt64___System_UIntPtr"))
-                    {
-                        oldNode.Replace(new Nodes.Convert(compiler, compiler.TypeSystem.UIntPtr, callNode.Arguments[0]));
-                    }
-                }
-            }
-        }
     }
 }
