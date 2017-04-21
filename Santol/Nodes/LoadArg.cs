@@ -17,7 +17,7 @@ namespace Santol.Nodes
 
         public override void Generate(FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.GetParam(Slot));
+            SetLlvmRef(fgen.GetParam(Slot + (fgen.Definition.HasThis && !fgen.Definition.ExplicitThis ? 1 : 0)));
         }
 
         public override string ToFullString() => $"LoadArg [Slot: {Slot}, Parameter: {Parameter}, Type: {ResultType}]";

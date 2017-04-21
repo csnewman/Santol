@@ -164,10 +164,10 @@ namespace Santol
             }
 
             IList<MethodInfo> staticMethods = new List<MethodInfo>();
+            IList<MethodInfo> localMethods = new List<MethodInfo>();
+            IList<MethodInfo> virtualMethods = new List<MethodInfo>();
             foreach (MethodDefinition methodD in typeDefinition.Methods)
             {
-                if (!methodD.IsStatic)
-                    throw new NotImplementedException("Support for local methods not implemented!");
                 MethodInfo method = new MethodInfo(methodD);
 
 //                Console.WriteLine("\n\n" + methodD.GetName());
@@ -188,11 +188,18 @@ namespace Santol
                     segment.PatchNodes(this);
                 }
 //                method.PrintSegments();
-                staticMethods.Add(method);
+
+                if (methodD.IsStatic)
+                    staticMethods.Add(method);
+                else if (methodD.IsVirtual || methodD.IsAbstract)
+                    virtualMethods.Add(method);
+                else
+                    localMethods.Add(method);
             }
 
             _loadedTypes.Add(typeDefinition.FullName,
-                new LoadedType(typeDefinition, staticFields, constantFields, localFields, staticMethods));
+                new LoadedType(typeDefinition, staticFields, constantFields, localFields, staticMethods, localMethods,
+                    virtualMethods));
         }
 
         public void GenerateType(LoadedType type)
@@ -213,6 +220,12 @@ namespace Santol
             }
 
             foreach (MethodInfo methodDefinition in type.StaticMethods)
+                GenerateMethod(methodDefinition);
+
+            foreach (MethodInfo methodDefinition in type.LocalMethods)
+                GenerateMethod(methodDefinition);
+
+            foreach (MethodInfo methodDefinition in type.VirtualMethods)
                 GenerateMethod(methodDefinition);
         }
 

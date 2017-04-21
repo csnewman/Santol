@@ -18,7 +18,7 @@ namespace Santol.Generator
         public Compiler Compiler { get; }
         private IDictionary<MethodDefinition, FunctionGenerator> _functions;
         private IDictionary<string, LLVMValueRef> _globalRefs, _funcRefs;
-        private IDictionary<LoadedType, LLVMTypeRef> _structCache;
+        private IDictionary<TypeDefinition, LLVMTypeRef> _structCache;
 
         public CodeGenerator(Compiler compiler)
         {
@@ -26,7 +26,7 @@ namespace Santol.Generator
             _functions = new Dictionary<MethodDefinition, FunctionGenerator>();
             _globalRefs = new Dictionary<string, LLVMValueRef>();
             _funcRefs = new Dictionary<string, LLVMValueRef>();
-            _structCache = new Dictionary<LoadedType, LLVMTypeRef>();
+            _structCache = new Dictionary<TypeDefinition, LLVMTypeRef>();
         }
 
         public FunctionGenerator DefineFunction(MethodDefinition definition)
@@ -54,7 +54,15 @@ namespace Santol.Generator
         public LLVMTypeRef GetFunctionType(MethodReference definition)
         {
             LLVMTypeRef returnType = ConvertType(definition.ReturnType);
-            LLVMTypeRef[] paramTypes = definition.Parameters.Select(p => ConvertType(p.ParameterType)).ToArray();
+            LLVMTypeRef[] paramTypes =
+                new LLVMTypeRef[definition.Parameters.Count + (definition.HasThis && !definition.ExplicitThis ? 1 : 0)];
+
+            for (int i = 0; i < definition.Parameters.Count; i++)
+                paramTypes[i + (definition.HasThis && !definition.ExplicitThis ? 1 : 0)] =
+                    ConvertType(definition.Parameters[i].ParameterType);
+
+            if (definition.HasThis)
+                paramTypes[0] = LLVM.PointerType(ConvertType(definition.DeclaringType), 0);
 
             return LLVM.FunctionType(returnType, paramTypes, false);
         }
@@ -123,14 +131,14 @@ namespace Santol.Generator
                     return LLVM.PointerType(LLVM.Int8TypeInContext(Compiler.Context), 0);
 
                 case MetadataType.Pointer:
+                    if (reference.GetElementType().MetadataType == MetadataType.Void)
+                        return LLVM.PointerType(LLVM.Int8TypeInContext(Compiler.Context), 0);
                     return LLVM.PointerType(ConvertType(reference.GetElementType()), 0);
 
                 case MetadataType.ValueType:
                 {
-                    LoadedType def = Resolve(reference);
-                    if (def.IsEnum)
-                        return ConvertType(def.EnumType);
-                    return GetStructType(def);
+                    TypeDefinition def = reference.Resolve();
+                    return def.IsEnum ? ConvertType(def.GetEnumUnderlyingType()) : GetStructType(def);
                 }
                 default:
                     Console.WriteLine("reference " + reference);
@@ -144,41 +152,50 @@ namespace Santol.Generator
             }
         }
 
-        private LLVMTypeRef GetStructType(LoadedType ltype)
+        public LLVMTypeRef GetStructType(TypeDefinition ltype)
         {
-            Console.WriteLine("reference " + ltype.Definition);
-            Console.WriteLine(" Element type " + ltype.Definition.GetElementType());
-            Console.WriteLine("  MetadataType " + ltype.Definition.MetadataType);
-            Console.WriteLine("  DeclaringType " + ltype.Definition.DeclaringType);
-            Console.WriteLine("  FullName " + ltype.Definition.FullName);
-            Console.WriteLine("  Name " + ltype.Definition.Name);
-            Console.WriteLine("  MetadataToken " + ltype.Definition.MetadataToken);
-            Console.WriteLine("  HasLayoutInfo " + ltype.Definition.HasLayoutInfo);
-            Console.WriteLine("  IsAutoLayout " + ltype.Definition.IsAutoLayout);
-            Console.WriteLine("  IsSequentialLayout " + ltype.Definition.IsSequentialLayout);
-            Console.WriteLine("  IsExplicitLayout " + ltype.Definition.IsExplicitLayout);
+            Console.WriteLine("reference " + ltype);
+            Console.WriteLine(" Element type " + ltype.GetElementType());
+            Console.WriteLine("  MetadataType " + ltype.MetadataType);
+            Console.WriteLine("  DeclaringType " + ltype.DeclaringType);
+            Console.WriteLine("  FullName " + ltype.FullName);
+            Console.WriteLine("  Name " + ltype.Name);
+            Console.WriteLine("  MetadataToken " + ltype.MetadataToken);
+            Console.WriteLine("  HasLayoutInfo " + ltype.HasLayoutInfo);
+            Console.WriteLine("  IsAutoLayout " + ltype.IsAutoLayout);
+            Console.WriteLine("  IsSequentialLayout " + ltype.IsSequentialLayout);
+            Console.WriteLine("  IsExplicitLayout " + ltype.IsExplicitLayout);
 
             if (_structCache.ContainsKey(ltype))
                 return _structCache[ltype];
 
-            LLVMTypeRef type = LLVM.StructCreateNamed(Compiler.Context, ltype.Definition.GetName());
+            LLVMTypeRef type = LLVM.StructCreateNamed(Compiler.Context, ltype.GetName());
             _structCache[ltype] = type;
 
-            if (ltype.Definition.PackingSize > 1)
+            if (ltype.PackingSize > 1)
                 throw new NotImplementedException("Unable to add packing");
 
-            if (!ltype.Definition.IsSequentialLayout)
+            if (!ltype.IsSequentialLayout)
                 throw new NotImplementedException("Unknown layout");
 
-            FieldDefinition[] locals = ltype.LocalFields.ToArray();
+
+            FieldDefinition[] locals = ltype.GetLocals().ToArray();
             LLVMTypeRef[] types = new LLVMTypeRef[locals.Length];
 
             for (int i = 0; i < locals.Length; i++)
                 types[i] = ConvertType(locals[i].FieldType);
 
-            LLVM.StructSetBody(type, types, ltype.Definition.PackingSize == 1);
+            LLVM.StructSetBody(type, types, ltype.PackingSize == 1);
 
             return type;
+        }
+
+        public LLVMValueRef GetSize(LLVMTypeRef type, LLVMTypeRef sizeType)
+        {
+            return LLVM.ConstPtrToInt(LLVM.ConstGEP(LLVM.ConstNull(type),
+                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Compiler.Context), 1, false)}), sizeType);
+//            LLVM.BuildGEP(Compiler.Builder, LLVM.ConstNull(type),
+//                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Compiler.Context), 1, false)}, "");
         }
 
         public LLVMValueRef GeneratePrimitiveConstant(TypeReference typeReference, object value)
@@ -311,6 +328,8 @@ namespace Santol.Generator
                         case MetadataType.Int32:
                             //TODO: Check
                             return value;
+                        case MetadataType.UIntPtr:
+                            return LLVM.BuildIntToPtr(Compiler.Builder, value, ConvertType(destType), "");
                         default:
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }

@@ -202,11 +202,8 @@ namespace Santol.Generator
 
         public LLVMValueRef? GenerateCall(MethodReference method, LLVMValueRef[] args)
         {
-            if (method.HasThis)
-                throw new NotImplementedException("Instance methods not supported");
-
             LLVMValueRef func = _cgen.GetFunctionRef(method);
-
+            
             if (method.ReturnType.MetadataType != MetadataType.Void)
                 return LLVM.BuildCall(_compiler.Builder, func, args, "");
             LLVM.BuildCall(_compiler.Builder, func, args, "");

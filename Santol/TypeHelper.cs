@@ -26,5 +26,10 @@ namespace Santol
                 return t2;
             throw new NotImplementedException("Proper most complex type finding not implemented " + t1 + " " + t2);
         }
+
+        public static IList<FieldDefinition> GetLocals(this TypeDefinition type)
+        {
+            return type.Fields.Where(fieldDefinition => !fieldDefinition.IsStatic).ToList();
+        }
     }
 }

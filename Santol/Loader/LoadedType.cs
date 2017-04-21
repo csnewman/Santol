@@ -17,16 +17,21 @@ namespace Santol.Loader
 
         public IList<FieldDefinition> LocalFields { get; }
         public IList<MethodInfo> StaticMethods { get; }
+        public IList<MethodInfo> LocalMethods { get; }
+        public IList<MethodInfo> VirtualMethods { get; }
         public TypeReference EnumType => Definition.GetEnumUnderlyingType();
 
         public LoadedType(TypeDefinition definition, IList<FieldDefinition> staticFields,
-            IList<FieldDefinition> constantFields, IList<FieldDefinition> localFields, IList<MethodInfo> staticMethods)
+            IList<FieldDefinition> constantFields, IList<FieldDefinition> localFields, IList<MethodInfo> staticMethods,
+            IList<MethodInfo> localMethods, IList<MethodInfo> virtualMethods)
         {
             Definition = definition;
             StaticFields = staticFields;
             ConstantFields = constantFields;
             LocalFields = localFields;
             StaticMethods = staticMethods;
+            LocalMethods = localMethods;
+            VirtualMethods = virtualMethods;
         }
 
         public int GetIndexOfLocal(FieldReference fref)
