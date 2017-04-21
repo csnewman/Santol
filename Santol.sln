@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Santol", "Santol\Santol.csproj", "{A56D448E-00F7-4FEA-8607-DA1E054A08E7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Santol.Corlib", "Santol.Corlib\Santol.Corlib.csproj", "{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{A56D448E-00F7-4FEA-8607-DA1E054A08E7}.Release|x64.Build.0 = Release|x64
 		{A56D448E-00F7-4FEA-8607-DA1E054A08E7}.Release|x86.ActiveCfg = Release|x86
 		{A56D448E-00F7-4FEA-8607-DA1E054A08E7}.Release|x86.Build.0 = Release|x86
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Debug|x64.Build.0 = Debug|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Debug|x86.Build.0 = Debug|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Release|x64.ActiveCfg = Release|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Release|x64.Build.0 = Release|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Release|x86.ActiveCfg = Release|Any CPU
+		{AE9B4C5B-7ACB-48C7-B9B4-7603E9F06AAC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
