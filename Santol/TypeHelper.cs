@@ -27,9 +27,22 @@ namespace Santol
             throw new NotImplementedException("Proper most complex type finding not implemented " + t1 + " " + t2);
         }
 
+        public static bool Is(this TypeDefinition def, TypeDefinition other) => def.GetName().Equals(other.GetName());
+
+        public static bool HasParent(this TypeDefinition type) => type.BaseType != null && !type.GetName().Equals("System_Object");
+
+        public static bool IsParent(this TypeDefinition def, TypeDefinition other)
+        {
+            if (def.BaseType == null)
+                return false;
+            return def.BaseType.Resolve().Is(other) || def.BaseType.Resolve().IsParent(other);
+        }
+
         public static IList<FieldDefinition> GetLocals(this TypeDefinition type)
         {
             return type.Fields.Where(fieldDefinition => !fieldDefinition.IsStatic).ToList();
         }
+
+        public static bool ImplicitThis(this MethodReference meth) => meth.HasThis && !meth.ExplicitThis;
     }
 }

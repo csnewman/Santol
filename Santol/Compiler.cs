@@ -31,6 +31,7 @@ namespace Santol
         public TypeSystem TypeSystem { get; private set; }
         public CodeGenerator CodeGenerator { get; private set; }
         public IList<ISegmentPatcher> SegmentPatchers { get; } = new List<ISegmentPatcher>();
+        public IList<IInstructionPatcher> InstructionPatchers { get; } = new List<IInstructionPatcher>();
         private IDictionary<string, LoadedType> _loadedTypes;
 
         public int OptimisationLevel
@@ -123,12 +124,15 @@ namespace Santol
             }));
 
             //Optimise module
+            IntPtr error;
+            LLVM.PrintModuleToFile(Module, dest + ".preopt.ll", out error);
+            LLVM.DisposeMessage(error);
+
             if (PassManager.HasValue)
                 LLVM.RunPassManager(PassManager.Value, Module);
 
             //Compile module
             LLVMTargetRef tref;
-            IntPtr error;
             LLVM.GetTargetFromTriple(TargetPlatform, out tref, out error);
             LLVM.DisposeMessage(error);
 
@@ -175,6 +179,9 @@ namespace Santol
 //                Console.WriteLine("\n\n" + methodD.GetName());
 
                 methodD.Body.SimplifyMacros();
+                foreach (IInstructionPatcher instructionPatcher in InstructionPatchers)
+                    instructionPatcher.Patch(this, method);
+
                 method.FixFallthroughs();
                 method.FixMidBranches();
 //                method.PrintInstructions();

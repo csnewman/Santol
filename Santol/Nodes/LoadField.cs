@@ -42,7 +42,12 @@ namespace Santol.Nodes
                     address = Object.GetLlvmRef();
                     objType = objType.GetElementType();
                     break;
+                case MetadataType.Class:
+                    address = Object.GetLlvmRef();
+                    break;
                 default:
+                    Console.WriteLine(ToFullString());
+                    Console.WriteLine(LLVM.TypeOf(Object.GetLlvmRef()));
                     throw new NotImplementedException("Unable to get field on type " + objType);
             }
 
@@ -54,6 +59,13 @@ namespace Santol.Nodes
                         throw new NotSupportedException("Fields should not be accessed on enum!");
 
                     SetLlvmRef(fgen.LoadDirect(fgen.GetStructElement(address, def.GetIndexOfLocal(Field))));
+                    break;
+                case MetadataType.Class:
+                    Console.WriteLine(LLVM.TypeOf(address) + "  " + ToFullString());
+                    SetLlvmRef(
+                        fgen.LoadDirect(CodeGenerator.GetObjectFormat(objType.Resolve())
+                            .GetFieldAddress(address, Field.Resolve())));
+//                    throw new NotImplementedException();
                     break;
                 default:
                     throw new NotImplementedException("Unable to get field on type " + objType);

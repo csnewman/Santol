@@ -9,6 +9,7 @@ using LLVMSharp;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using Santol.Loader;
+using Santol.Objects;
 using MethodDefinition = Mono.Cecil.MethodDefinition;
 
 namespace Santol.Generator
@@ -19,6 +20,7 @@ namespace Santol.Generator
         private IDictionary<MethodDefinition, FunctionGenerator> _functions;
         private IDictionary<string, LLVMValueRef> _globalRefs, _funcRefs;
         private IDictionary<TypeDefinition, LLVMTypeRef> _structCache;
+        private IDictionary<string, ObjectFormat> _objectFormatCache;
 
         public CodeGenerator(Compiler compiler)
         {
@@ -27,6 +29,7 @@ namespace Santol.Generator
             _globalRefs = new Dictionary<string, LLVMValueRef>();
             _funcRefs = new Dictionary<string, LLVMValueRef>();
             _structCache = new Dictionary<TypeDefinition, LLVMTypeRef>();
+            _objectFormatCache = new Dictionary<string, ObjectFormat>();
         }
 
         public FunctionGenerator DefineFunction(MethodDefinition definition)
@@ -62,7 +65,10 @@ namespace Santol.Generator
                     ConvertType(definition.Parameters[i].ParameterType);
 
             if (definition.HasThis)
-                paramTypes[0] = LLVM.PointerType(ConvertType(definition.DeclaringType), 0);
+            {
+                LLVMTypeRef baseType = ConvertType(definition.DeclaringType);
+                paramTypes[0] = definition.DeclaringType.IsValueType ? LLVM.PointerType(baseType, 0) : baseType;
+            }
 
             return LLVM.FunctionType(returnType, paramTypes, false);
         }
@@ -140,6 +146,10 @@ namespace Santol.Generator
                     TypeDefinition def = reference.Resolve();
                     return def.IsEnum ? ConvertType(def.GetEnumUnderlyingType()) : GetStructType(def);
                 }
+
+                case MetadataType.Class:
+                    return LLVM.PointerType(GetObjectFormat(reference.Resolve()).GetStructType(), 0);
+
                 default:
                     Console.WriteLine("reference " + reference);
                     Console.WriteLine(" Element type " + reference.GetElementType());
@@ -268,9 +278,21 @@ namespace Santol.Generator
             return IsEnum(@ref) ? Resolve(@ref).EnumType : null;
         }
 
+        public ObjectFormat GetObjectFormat(TypeDefinition type)
+        {
+            if (_objectFormatCache.ContainsKey(type.GetName()))
+                return _objectFormatCache[type.GetName()];
+
+            ObjectFormat format = new ObjectFormat(this, type);
+            _objectFormatCache[type.GetName()] = format;
+            return format;
+        }
+
         public LLVMValueRef GenerateConversion(TypeReference sourceType, TypeReference destType, LLVMValueRef value)
         {
             if (sourceType == destType)
+                return value;
+            if (sourceType.Resolve().Is(destType.Resolve()))
                 return value;
 
             if (sourceType.MetadataType == MetadataType.ValueType)
@@ -372,6 +394,16 @@ namespace Santol.Generator
                             throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
                     }
 
+                case MetadataType.Object:
+                case MetadataType.Class:
+                    switch (destType.MetadataType)
+                    {
+                        case MetadataType.Object:
+                        case MetadataType.Class:
+                            return GetObjectFormat(sourceType.Resolve()).UpcastTo(value, destType.Resolve());
+                        default:
+                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
+                    }
 
                 default:
                     throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
