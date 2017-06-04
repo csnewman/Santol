@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using GraphvizWrapper;
 using LLVMSharp;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -18,6 +19,9 @@ namespace Santol
 {
     public class Compiler
     {
+        public Graphviz Graphviz { get; set; }
+        public bool GenerateGraphs { get; set; }
+        public string GraphsTargetDirectory { get; set; }
         public string HostPlatform => Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple());
         public string TargetPlatform { get; set; }
         private int _optimisationLevel;
@@ -208,9 +212,11 @@ namespace Santol
                     localMethods.Add(method);
             }
 
-            _loadedTypes.Add(typeDefinition.FullName,
-                new LoadedType(typeDefinition, staticFields, constantFields, localFields, staticMethods, localMethods,
-                    virtualMethods));
+            LoadedType loaded = new LoadedType(typeDefinition, staticFields, constantFields, localFields, staticMethods,
+                localMethods, virtualMethods);
+            _loadedTypes.Add(typeDefinition.FullName, loaded);
+            if (GenerateGraphs)
+                loaded.GenerateGraphs(Graphviz, Path.Combine(GraphsTargetDirectory, typeDefinition.FullName));
         }
 
         public void GenerateType(LoadedType type)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using GraphvizWrapper;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 
@@ -42,6 +43,11 @@ namespace Santol.Loader
                     return i;
             }
             throw new ArgumentException("Field does not exist!");
+        }
+
+        public void GenerateGraphs(Graphviz graphviz, string directory)
+        {
+            throw new NotImplementedException();
         }
     }
 }
