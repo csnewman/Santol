@@ -130,6 +130,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler.cs" />
+    <Compile Include="IR\ClassType.cs" />
+    <Compile Include="IR\IType.cs" />
+    <Compile Include="Loader\AssemblyLoader.cs" />
     <Compile Include="Loader\CodeRegion.cs" />
     <Compile Include="Loader\CodeSegment.cs" />
     <Compile Include="Extensions.cs" />

@@ -144,6 +144,9 @@ namespace Santol.Loader
                     case Code.Stsfld:
                         PushNode(new StoreStatic(compiler, (FieldReference) instruction.Operand, PopNode()));
                         break;
+                    case Code.Stfld:
+                        PushNode(new StoreField(compiler, PopNode(), (FieldReference) instruction.Operand));
+                        break;
 
                     case Code.Stind_I1:
                         PushNode(new StoreDirect(compiler, compiler.TypeSystem.Byte, PopNode(), PopNode()));
@@ -286,6 +289,20 @@ namespace Santol.Loader
 
 
                         PushNode(new CallVirtual(compiler, method, PopNode(), args));
+                        break;
+                    }
+
+                    case Code.Newobj:
+                    {
+                        MethodReference method = (MethodReference) instruction.Operand;
+
+                        int argCount = method.Parameters.Count + (method.HasThis && method.ExplicitThis ? -1 : 0);
+                        NodeReference[] args = new NodeReference[argCount];
+
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = PopNode();
+
+                        PushNode(new NewObject(compiler, method, args));
                         break;
                     }
 
