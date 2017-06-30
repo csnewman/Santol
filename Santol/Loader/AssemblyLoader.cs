@@ -80,11 +80,14 @@ namespace Santol.Loader
                     foreach (FieldDefinition field in definition.Fields)
                     {
                         Console.WriteLine(" " + field);
+                        if (field.InitialValue.Length != 0)
+                            throw new NotSupportedException("Initial values not supported!");
+
                         if (field.HasConstant)
                             type.AddField(new ConstantField(type, ResolveType(field.FieldType), field.Name,
                                 field.Constant));
                         else if (field.IsStatic)
-                            throw new NotImplementedException("Static fields are not implemented");
+                            type.AddField(new StaticField(type, ResolveType(field.FieldType), field.Name));
                         else
                             throw new NotImplementedException("Local fields are not implemented");
                     }

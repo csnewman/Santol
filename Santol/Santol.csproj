@@ -135,6 +135,7 @@
     <Compile Include="IR\IField.cs" />
     <Compile Include="IR\IType.cs" />
     <Compile Include="IR\PrimitiveType.cs" />
+    <Compile Include="IR\StaticField.cs" />
     <Compile Include="Loader\AssemblyLoader.cs" />
     <Compile Include="Loader\CodeRegion.cs" />
     <Compile Include="Loader\CodeSegment.cs" />
