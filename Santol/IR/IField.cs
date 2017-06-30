@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Santol.IR
+﻿namespace Santol.IR
 {
     public interface IField
     {
-
+        IType Parent { get; }
+        string Name { get; }
+        string MangledName { get; }
+        IType Type { get; }
     }
 }

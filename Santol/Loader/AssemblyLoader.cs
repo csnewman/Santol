@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Santol.IR;
 
 namespace Santol.Loader
@@ -34,33 +33,67 @@ namespace Santol.Loader
             if (_resolvedTypes.ContainsKey(definition))
                 return _resolvedTypes[definition];
 
-            Console.WriteLine("Loading " + definition.FullName);
-
-
-            if (definition.IsEnum)
-                throw new NotImplementedException("Enums are not implemented yet");
-            else if (definition.IsValueType)
-                throw new NotImplementedException("Structs are not implemented yet");
-            else
+            switch (definition.MetadataType)
             {
-                ClassType type = new ClassType(definition.FullName);
-                _resolvedTypes.Add(definition, type);
-
-                foreach (FieldDefinition field in definition.Fields)
+                case MetadataType.Void:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Boolean:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Char:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.SByte:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Byte:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Int16:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.UInt16:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Int32:
+                    return PrimitiveType.Int32;
+                case MetadataType.UInt32:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Int64:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.UInt64:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Single:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Double:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.IntPtr:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.UIntPtr:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Pointer:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.String:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.ValueType:
+                    throw new NotImplementedException("Type not implemented! " + definition);
+                case MetadataType.Class:
                 {
-                    if (field.HasConstant)
-                        constantFields.Add(field);
-                    else if (field.IsStatic)
-                        staticFields.Add(field);
-                    else
-                        localFields.Add(field);
+                    Console.WriteLine("Loading " + definition.FullName + " (class)");
+                    ClassType type = new ClassType(definition.FullName);
+                    _resolvedTypes.Add(definition, type);
+
+                    foreach (FieldDefinition field in definition.Fields)
+                    {
+                        Console.WriteLine(" " + field);
+                        if (field.HasConstant)
+                            type.AddField(new ConstantField(type, ResolveType(field.FieldType), field.Name,
+                                field.Constant));
+                        else if (field.IsStatic)
+                            throw new NotImplementedException("Static fields are not implemented");
+                        else
+                            throw new NotImplementedException("Local fields are not implemented");
+                    }
+
+                    return type;
                 }
-
-
-                Console.WriteLine(" >> " + type.MangledName);
+                default:
+                    throw new NotImplementedException("Type not implemented! " + definition);
             }
-
-            return _resolvedTypes[definition];
         }
     }
 }
