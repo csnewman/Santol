@@ -132,6 +132,7 @@
     <Compile Include="Compiler.cs" />
     <Compile Include="IR\ClassType.cs" />
     <Compile Include="IR\ConstantField.cs" />
+    <Compile Include="IR\EnumType.cs" />
     <Compile Include="IR\IField.cs" />
     <Compile Include="IR\IType.cs" />
     <Compile Include="IR\PrimitiveType.cs" />

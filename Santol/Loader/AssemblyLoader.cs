@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using Mono.Cecil.Rocks;
 using Santol.IR;
 
 namespace Santol.Loader
@@ -70,6 +71,16 @@ namespace Santol.Loader
                 case MetadataType.String:
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.ValueType:
+                    if (definition.IsEnum)
+                    {
+                        Console.WriteLine("Loading " + definition.FullName + " (enum)");
+                        EnumType type = new EnumType(definition.FullName,
+                            ResolveType(definition.GetEnumUnderlyingType()));
+                        _resolvedTypes.Add(definition, type);
+
+                        return type;
+                    }
+
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.Class:
                 {
