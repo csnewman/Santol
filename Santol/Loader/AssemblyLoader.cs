@@ -87,7 +87,7 @@ namespace Santol.Loader
                             if (field.Name.Equals("value__"))
                                 continue;
                             else if (field.HasConstant)
-                                type.AddConstant(new ConstantField(type, ResolveType(field.FieldType), field.Name, field.Constant));
+                                type.AddField(new ConstantField(type, ResolveType(field.FieldType), field.Name, field.Constant));
                             else
                                 throw new NotImplementedException("Only constants are supported in enuns " + field);
                         }
