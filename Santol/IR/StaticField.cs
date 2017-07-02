@@ -6,12 +6,13 @@
         public string Name { get; }
         public string MangledName { get; }
         public IType Type { get; }
+        public bool IsShared => true;
 
         public StaticField(IType parent, IType type, string name)
         {
             Parent = parent;
             Name = name;
-            MangledName = $"{parent.MangledName}_SF_{name}";
+            MangledName = $"{parent.MangledName}_SF_{type.MangledName}_{name}";
             Type = type;
         }
     }

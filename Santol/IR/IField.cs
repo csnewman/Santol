@@ -6,5 +6,6 @@
         string Name { get; }
         string MangledName { get; }
         IType Type { get; }
+        bool IsShared { get; }
     }
 }

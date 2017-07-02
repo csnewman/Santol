@@ -87,14 +87,40 @@ namespace Santol.Loader
                             if (field.Name.Equals("value__"))
                                 continue;
                             else if (field.HasConstant)
-                                type.AddField(new ConstantField(type, ResolveType(field.FieldType), field.Name, field.Constant));
+                                type.AddField(new ConstantField(type, ResolveType(field.FieldType), field.Name,
+                                    field.Constant));
                             else
                                 throw new NotImplementedException("Only constants are supported in enuns " + field);
                         }
 
                         return type;
                     }
+                    else if (definition.PackingSize > 1)
+                        throw new NotSupportedException("Packing sizes of 0 and 1 are only supported");
+                    else if (definition.IsSequentialLayout)
+                    {
+                        Console.WriteLine("Loading " + definition.FullName + " (sequential struct)");
+                        SequentialStructType type =
+                            new SequentialStructType(definition.FullName, definition.PackingSize == 1);
+                        _resolvedTypes.Add(definition, type);
 
+                        foreach (FieldDefinition field in definition.Fields)
+                        {
+                            Console.WriteLine(" " + field);
+                            if (field.InitialValue.Length != 0)
+                                throw new NotSupportedException("Initial values not supported!");
+
+                            if (field.HasConstant)
+                                type.AddField(new ConstantField(type, ResolveType(field.FieldType), field.Name,
+                                    field.Constant));
+                            else if (field.IsStatic)
+                                type.AddField(new StaticField(type, ResolveType(field.FieldType), field.Name));
+                            else
+                                type.AddField(new LocalField(type, ResolveType(field.FieldType), field.Name));
+                        }
+
+                        return type;
+                    }
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.Class:
                 {
