@@ -49,11 +49,11 @@ namespace Santol.Loader
                 case MetadataType.Int16:
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.UInt16:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.UInt16;
                 case MetadataType.Int32:
                     return PrimitiveType.Int32;
                 case MetadataType.UInt32:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.UInt32;
                 case MetadataType.Int64:
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.UInt64:
