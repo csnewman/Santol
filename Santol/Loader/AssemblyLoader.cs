@@ -78,6 +78,20 @@ namespace Santol.Loader
                             ResolveType(definition.GetEnumUnderlyingType()));
                         _resolvedTypes.Add(definition, type);
 
+                        foreach (FieldDefinition field in definition.Fields)
+                        {
+                            Console.WriteLine(" " + field);
+                            if (field.InitialValue.Length != 0)
+                                throw new NotSupportedException("Initial values not supported!");
+
+                            if (field.Name.Equals("value__"))
+                                continue;
+                            else if (field.HasConstant)
+                                type.AddConstant(new ConstantField(type, ResolveType(field.FieldType), field.Name, field.Constant));
+                            else
+                                throw new NotImplementedException("Only constants are supported in enuns " + field);
+                        }
+
                         return type;
                     }
 
