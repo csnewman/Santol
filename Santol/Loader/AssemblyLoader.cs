@@ -80,7 +80,6 @@ namespace Santol.Loader
 
                         foreach (FieldDefinition field in definition.Fields)
                         {
-                            Console.WriteLine(" " + field);
                             if (field.InitialValue.Length != 0)
                                 throw new NotSupportedException("Initial values not supported!");
 
@@ -92,6 +91,9 @@ namespace Santol.Loader
                             else
                                 throw new NotImplementedException("Only constants are supported in enuns " + field);
                         }
+
+                        if (definition.HasMethods)
+                            throw new NotSupportedException("Methods inside enums are not supported");
 
                         return type;
                     }
@@ -106,7 +108,6 @@ namespace Santol.Loader
 
                         foreach (FieldDefinition field in definition.Fields)
                         {
-                            Console.WriteLine(" " + field);
                             if (field.InitialValue.Length != 0)
                                 throw new NotSupportedException("Initial values not supported!");
 
@@ -119,6 +120,9 @@ namespace Santol.Loader
                                 type.AddField(new LocalField(type, ResolveType(field.FieldType), field.Name));
                         }
 
+                        if (definition.HasMethods)
+                            throw new NotSupportedException("Methods inside structs are not supported");
+
                         return type;
                     }
                     throw new NotImplementedException("Type not implemented! " + definition);
@@ -130,7 +134,6 @@ namespace Santol.Loader
 
                     foreach (FieldDefinition field in definition.Fields)
                     {
-                        Console.WriteLine(" " + field);
                         if (field.InitialValue.Length != 0)
                             throw new NotSupportedException("Initial values not supported!");
 
@@ -143,7 +146,10 @@ namespace Santol.Loader
                             throw new NotImplementedException("Local fields are not implemented");
                     }
 
-                    return type;
+                    if (definition.HasMethods)
+                        throw new NotSupportedException("Methods inside classes are not supported");
+
+                        return type;
                 }
                 default:
                     throw new NotImplementedException("Type not implemented! " + definition);
