@@ -11,6 +11,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Santol.Generator;
+using Santol.IR;
 using Santol.Loader;
 using Santol.Nodes;
 using Santol.Patchers;
@@ -32,11 +33,9 @@ namespace Santol
         public LLVMBuilderRef Builder { get; private set; }
         public LLVMDIBuilderRef DIBuilder { get; private set; }
         public LLVMMetadataRef CompileUnit { get; private set; }
-        public TypeSystem TypeSystem { get; private set; }
         public CodeGenerator CodeGenerator { get; private set; }
         public IList<ISegmentPatcher> SegmentPatchers { get; } = new List<ISegmentPatcher>();
         public IList<IInstructionPatcher> InstructionPatchers { get; } = new List<IInstructionPatcher>();
-        private IDictionary<string, LoadedType> _loadedTypes;
 
         public int OptimisationLevel
         {
@@ -91,28 +90,19 @@ namespace Santol
             }
 
             //Load types
-            AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(source);
-            TypeSystem = assembly.MainModule.TypeSystem;
-            _loadedTypes = new Dictionary<string, LoadedType>();
-
-            foreach (TypeDefinition type in assembly.MainModule.Types)
-            {
-                if (type.Name.Equals("<Module>")) continue;
-                LoadType(type);
-            }
+            AssemblyLoader loader = new AssemblyLoader();
+            IList<IType> types = loader.Load(source);
 
             //Generate types
             CodeGenerator = new CodeGenerator(this);
 
-            foreach (LoadedType loadedType in _loadedTypes.Values)
-                GenerateType(loadedType);
+//            foreach (LoadedType loadedType in _loadedTypes.Values)
+//                GenerateType(loadedType);
 
 
             //Complete debug info
             if (GenerateDebug)
-            {
                 LLVM.DIBuilderFinalize(DIBuilder);
-            }
 
             LLVM.AddNamedMetadataOperand(Module, "llvm.module.flags", LLVM.MDNode(new[]
             {
@@ -154,137 +144,6 @@ namespace Santol
                 out error);
 
             LLVM.DisposeTargetMachine(machineRef);
-        }
-
-        private void LoadType(TypeDefinition typeDefinition)
-        {
-            Console.WriteLine("Loading " + typeDefinition.FullName);
-
-            IList<FieldDefinition> localFields = new List<FieldDefinition>();
-            IList<FieldDefinition> staticFields = new List<FieldDefinition>();
-            IList<FieldDefinition> constantFields = new List<FieldDefinition>();
-            foreach (FieldDefinition field in typeDefinition.Fields)
-            {
-                if (field.HasConstant)
-                    constantFields.Add(field);
-                else if (field.IsStatic)
-                    staticFields.Add(field);
-                else
-                    localFields.Add(field);
-            }
-
-            IList<MethodInfo> staticMethods = new List<MethodInfo>();
-            IList<MethodInfo> localMethods = new List<MethodInfo>();
-            IList<MethodInfo> virtualMethods = new List<MethodInfo>();
-            foreach (MethodDefinition methodD in typeDefinition.Methods)
-            {
-                MethodInfo method = new MethodInfo(methodD);
-
-//                Console.WriteLine("\n\n" + methodD.GetName());
-
-                methodD.Body.SimplifyMacros();
-                foreach (IInstructionPatcher instructionPatcher in InstructionPatchers)
-                    instructionPatcher.Patch(this, method);
-
-                method.FixFallthroughs();
-                method.FixMidBranches();
-//                method.PrintInstructions();
-
-                method.ParseRegions();
-//                method.PrintRegions();
-
-                method.GenerateSegments();
-                method.DetectNoIncomings();
-                foreach (CodeSegment segment in method.Segments)
-                    segment.ParseInstructions(this);
-
-                foreach (ISegmentPatcher segmentPatcher in SegmentPatchers)
-                foreach (CodeSegment segment in method.Segments)
-                    segmentPatcher.Patch(this, method, segment);
-
-//                method.PrintSegments();
-
-                if (methodD.IsStatic)
-                    staticMethods.Add(method);
-                else if (methodD.IsVirtual || methodD.IsAbstract)
-                    virtualMethods.Add(method);
-                else
-                    localMethods.Add(method);
-            }
-
-            LoadedType loaded = new LoadedType(typeDefinition, staticFields, constantFields, localFields, staticMethods,
-                localMethods, virtualMethods);
-            _loadedTypes.Add(typeDefinition.FullName, loaded);
-            if (GenerateGraphs)
-                loaded.GenerateGraphs(Graphviz, Path.Combine(GraphsTargetDirectory, typeDefinition.FullName));
-        }
-
-        public void GenerateType(LoadedType type)
-        {
-            Console.WriteLine($"Generating {type.Definition.FullName}");
-
-
-            foreach (FieldDefinition field in type.ConstantFields)
-            {
-                CodeGenerator.SetConstant(field.GetName(), CodeGenerator.ConvertType(field.FieldType),
-                    CodeGenerator.GeneratePrimitiveConstant(field.FieldType, field.Constant));
-            }
-
-            foreach (FieldDefinition field in type.StaticFields)
-            {
-                LLVMTypeRef ftype = CodeGenerator.ConvertType(field.FieldType);
-                CodeGenerator.SetGlobal(field.GetName(), ftype, LLVM.ConstNull(ftype));
-            }
-
-            foreach (MethodInfo methodDefinition in type.StaticMethods)
-                GenerateMethod(methodDefinition);
-
-            foreach (MethodInfo methodDefinition in type.LocalMethods)
-                GenerateMethod(methodDefinition);
-
-            foreach (MethodInfo methodDefinition in type.VirtualMethods)
-                GenerateMethod(methodDefinition);
-        }
-
-        public void GenerateMethod(MethodInfo method)
-        {
-            MethodDefinition definition = method.Definition;
-            FunctionGenerator fgen = CodeGenerator.DefineFunction(definition);
-
-            //Allocate locals
-            fgen.CreateBlock("entry", null);
-            {
-                ICollection<VariableDefinition> variables = definition.Body.Variables;
-                fgen.Locals = new LLVMValueRef[variables.Count];
-                foreach (VariableDefinition variable in variables)
-                {
-                    string name = "local_" +
-                                  (string.IsNullOrEmpty(variable.Name) ? variable.Index.ToString() : variable.Name);
-                    LLVMTypeRef type = CodeGenerator.ConvertType(variable.VariableType);
-                    fgen.Locals[variable.Index] = LLVM.BuildAlloca(Builder, type, name);
-                }
-            }
-
-            IList<CodeSegment> segments = method.Segments;
-            foreach (CodeSegment segment in segments)
-                fgen.CreateBlock(segment, CodeGenerator.ConvertTypes(segment.Incoming));
-
-            //Enter first segment
-            fgen.SelectBlock("entry");
-            fgen.Branch(segments[0], null);
-
-            foreach (CodeSegment segment in segments)
-            {
-                fgen.SelectBlock(segment);
-
-                foreach (NodeReference node in segment.Nodes)
-                    node.Node.Generate(fgen);
-            }
-        }
-
-        public LoadedType Resolve(string name)
-        {
-            return _loadedTypes.ContainsKey(name) ? _loadedTypes[name] : null;
         }
     }
 }
