@@ -7,7 +7,7 @@ using Mono.Cecil.Cil;
 
 namespace Santol.Loader
 {
-    public class CodeRegion
+    public class RegionMap
     {
         public enum RegionType
         {
@@ -19,23 +19,23 @@ namespace Santol.Loader
 
         public RegionType Type { get; }
         public InstructionRange Range { get; }
-        public IList<CodeRegion> AssociatedRegions { get; }
-        public IList<CodeRegion> ChildRegions { get; }
+        public IList<RegionMap> AssociatedRegions { get; }
+        public IList<RegionMap> ChildRegions { get; }
 
-        public CodeRegion(RegionType type, InstructionRange range)
+        public RegionMap(RegionType type, InstructionRange range)
         {
             Type = type;
             Range = range;
-            AssociatedRegions = new List<CodeRegion>();
-            ChildRegions = new List<CodeRegion>();
+            AssociatedRegions = new List<RegionMap>();
+            ChildRegions = new List<RegionMap>();
         }
 
-        public void AddAssociatedRegion(CodeRegion region)
+        public void AddAssociatedRegion(RegionMap regionMap)
         {
-            AssociatedRegions.Add(region);
+            AssociatedRegions.Add(regionMap);
         }
 
-        public CodeRegion AddRegion(RegionType type, InstructionRange range)
+        public RegionMap AddRegion(RegionType type, InstructionRange range)
         {
             if (Range.Equals(range))
             {
@@ -44,21 +44,21 @@ namespace Santol.Loader
                 return this;
             }
             if (!Range.IsContained(range))
-                throw new ArgumentException("Cannot create sub region with a subregion not contained");
-            foreach (CodeRegion sregion in ChildRegions)
+                throw new ArgumentException("Cannot create sub regionMap with a subregion not contained");
+            foreach (RegionMap sregion in ChildRegions)
                 if (sregion.Range.IsContained(range))
                     return sregion.AddRegion(type, range);
 
-            CodeRegion newRegion = new CodeRegion(type, range);
-            ChildRegions.Add(newRegion);
-            return newRegion;
+            RegionMap newRegionMap = new RegionMap(type, range);
+            ChildRegions.Add(newRegionMap);
+            return newRegionMap;
         }
 
-        public CodeRegion GetRegion(Instruction instruction)
+        public RegionMap GetRegion(Instruction instruction)
         {
             if (!Range.IsContained(instruction))
                 throw new ArgumentOutOfRangeException();
-            foreach (CodeRegion childRegion in ChildRegions)
+            foreach (RegionMap childRegion in ChildRegions)
             {
                 if (childRegion.Range.IsContained(instruction))
                     return childRegion.GetRegion(instruction);
@@ -70,15 +70,15 @@ namespace Santol.Loader
         {
             if (!locations.Contains(Range.Start) ||
                 (Range.End.Next != null && !locations.Contains(Range.End.Next)))
-                throw new NotSupportedException("Unable to handle region not segment bound");
-            foreach (CodeRegion childRegion in ChildRegions)
+                throw new NotSupportedException("Unable to handle regionMap not segment bound");
+            foreach (RegionMap childRegion in ChildRegions)
                 childRegion.EnsureEdges(locations);
         }
 
         public void PrintTree(string ident)
         {
             Console.WriteLine($"{ident}{Type} ({Range.Start.Offset}-{Range.End.Offset})");
-            foreach (CodeRegion childRegion in ChildRegions)
+            foreach (RegionMap childRegion in ChildRegions)
                 childRegion.PrintTree($"{ident}--- ");
         }
     }
