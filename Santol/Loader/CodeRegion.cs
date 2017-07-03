@@ -66,13 +66,13 @@ namespace Santol.Loader
             return this;
         }
 
-        public void EnsureEdges(IList<Instruction> jumpDestinations)
+        public void EnsureEdges(IList<Instruction> locations)
         {
-            if (!jumpDestinations.Contains(Range.Start) ||
-                (Range.End.Next != null && !jumpDestinations.Contains(Range.End.Next)))
+            if (!locations.Contains(Range.Start) ||
+                (Range.End.Next != null && !locations.Contains(Range.End.Next)))
                 throw new NotSupportedException("Unable to handle region not segment bound");
             foreach (CodeRegion childRegion in ChildRegions)
-                childRegion.EnsureEdges(jumpDestinations);
+                childRegion.EnsureEdges(locations);
         }
 
         public void PrintTree(string ident)
