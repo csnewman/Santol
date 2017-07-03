@@ -162,44 +162,6 @@ namespace Santol.Generator
             }
         }
 
-        public LLVMTypeRef GetStructType(TypeDefinition ltype)
-        {
-            Console.WriteLine("reference " + ltype);
-            Console.WriteLine(" Element type " + ltype.GetElementType());
-            Console.WriteLine("  MetadataType " + ltype.MetadataType);
-            Console.WriteLine("  DeclaringType " + ltype.DeclaringType);
-            Console.WriteLine("  FullName " + ltype.FullName);
-            Console.WriteLine("  Name " + ltype.Name);
-            Console.WriteLine("  MetadataToken " + ltype.MetadataToken);
-            Console.WriteLine("  HasLayoutInfo " + ltype.HasLayoutInfo);
-            Console.WriteLine("  IsAutoLayout " + ltype.IsAutoLayout);
-            Console.WriteLine("  IsSequentialLayout " + ltype.IsSequentialLayout);
-            Console.WriteLine("  IsExplicitLayout " + ltype.IsExplicitLayout);
-
-            if (_structCache.ContainsKey(ltype))
-                return _structCache[ltype];
-
-            LLVMTypeRef type = LLVM.StructCreateNamed(Compiler.Context, ltype.GetName());
-            _structCache[ltype] = type;
-
-            if (ltype.PackingSize > 1)
-                throw new NotImplementedException("Unable to add packing");
-
-            if (!ltype.IsSequentialLayout)
-                throw new NotImplementedException("Unknown layout");
-
-
-            FieldDefinition[] locals = ltype.GetLocals().ToArray();
-            LLVMTypeRef[] types = new LLVMTypeRef[locals.Length];
-
-            for (int i = 0; i < locals.Length; i++)
-                types[i] = ConvertType(locals[i].FieldType);
-
-            LLVM.StructSetBody(type, types, ltype.PackingSize == 1);
-
-            return type;
-        }
-
         public LLVMValueRef GetSize(LLVMTypeRef type, LLVMTypeRef sizeType)
         {
             return LLVM.ConstPtrToInt(LLVM.ConstGEP(LLVM.ConstNull(type),
