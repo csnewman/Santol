@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using Santol.IR;
@@ -25,6 +26,11 @@ namespace Santol.Loader
             }
 
             return types;
+        }
+
+        public IType[] ResolveTypes(TypeReference[] references)
+        {
+            return references.Select(ResolveType).ToArray();
         }
 
         public IType ResolveType(TypeReference reference)
@@ -146,10 +152,15 @@ namespace Santol.Loader
                             throw new NotImplementedException("Local fields are not implemented");
                     }
 
-                    if (definition.HasMethods)
-                        throw new NotSupportedException("Methods inside classes are not supported");
-
-                        return type;
+                    foreach (MethodDefinition method in definition.Methods)
+                    {
+                        IType[] args = method.Parameters.Cast<TypeReference>().Select(ResolveType).ToArray();
+                        type.AddMethod(new StandardMethod(type, method.Name, method.IsStatic,
+                            !method.IsVirtual && !method.IsAbstract, ResolveType(method.ReturnType), args,
+                            method.Body));
+                    }
+                    
+                    return type;
                 }
                 default:
                     throw new NotImplementedException("Type not implemented! " + definition);
