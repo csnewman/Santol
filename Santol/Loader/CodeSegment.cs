@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Santol.IR;
 using Santol.Nodes;
 
 namespace Santol.Loader
@@ -15,18 +16,18 @@ namespace Santol.Loader
         public bool ForceNoIncomings { get; set; }
         public bool HasIncoming => !ForceNoIncomings && Incoming != null && Incoming.Length > 0;
         public TypeReference[] Incoming { get; set; }
-        public CodeRegion Region { get; }
+        public RegionMap RegionMap { get; }
         public IList<CodeSegment> Callers { get; }
         public IList<NodeReference> Nodes { get; }
         private Stack<Node> _nodeStack;
 
-        public CodeSegment(MethodInfo method, string name, CodeRegion region)
+        public CodeSegment(MethodInfo method, string name, RegionMap regionMap)
         {
             Method = method;
             Name = name;
             Instructions = new List<Instruction>();
             Nodes = new List<NodeReference>();
-            Region = region;
+            RegionMap = regionMap;
             Callers = new List<CodeSegment>();
         }
 
@@ -341,7 +342,8 @@ namespace Santol.Loader
                     {
                         NodeReference v2 = PopNode();
                         NodeReference v1 = PopNode();
-                        NodeReference cond = AddNode(new Comparison(compiler, Comparison.OperationType.LessThan, v1, v2));
+                        NodeReference cond =
+                            AddNode(new Comparison(compiler, Comparison.OperationType.LessThan, v1, v2));
                         CodeSegment segment = Method.GetSegment((Instruction) instruction.Operand);
                         CodeSegment elseSegment = Method.GetSegment((Instruction) instruction.Next.Operand);
                         Tuple<TypeReference[], NodeReference[]> stack = GetStackInfo();
