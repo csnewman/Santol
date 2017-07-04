@@ -15,6 +15,9 @@ namespace Santol.Loader
         private RegionMap _regionMap;
         private IList<Instruction> _noIncomings;
         private BlockRegion _baseRegion;
+        private IDictionary<RegionMap, BlockRegion> _regionMappings;
+        private IDictionary<Instruction, Block> _blockMap;
+        private IList<Block> _blocks;
 
         private void PrintInstructions()
         {
@@ -51,16 +54,16 @@ namespace Santol.Loader
             body.SimplifyMacros();
             FixFallthroughs();
             FixMidBranches();
+            DetectNoIncomings();
             PrintInstructions();
 
-            // Map out exception regions
+            // Map out exception regions and convert them
             ParseRegions();
             PrintRegions();
+            GenerateRegions();
 
-            // Generate regions and blocks
-            DetectNoIncomings();
-            _baseRegion = new BlockRegion(BlockRegion.RegionType.Primary, null);
-            GenerateRegion(_baseRegion, _regionMap);
+            // Creates blocks
+            GenerateBlocks();
         }
 
         private IList<Instruction> GetJumpDestinations()
@@ -240,8 +243,17 @@ namespace Santol.Loader
             }
         }
 
+        private void GenerateRegions()
+        {
+            _regionMappings = new Dictionary<RegionMap, BlockRegion>();
+            _baseRegion = new BlockRegion(BlockRegion.RegionType.Primary, null);
+            GenerateRegion(_baseRegion, _regionMap);
+        }
+
         private void GenerateRegion(BlockRegion region, RegionMap map)
         {
+            _regionMappings[map] = region;
+
             foreach (RegionMap childRegion in map.ChildRegions)
             {
                 if (childRegion.Type != RegionMap.RegionType.Try) continue;
@@ -273,6 +285,42 @@ namespace Santol.Loader
                     }
                 }
             }
+        }
+
+        private BlockRegion GetRegion(Instruction instruction)
+        {
+            return _regionMappings[_regionMap.GetRegion(instruction)];
+        }
+
+        private void GenerateBlocks()
+        {
+            _blockMap = new Dictionary<Instruction, Block>();
+            _blocks = new List<Block>();
+
+            IList<Instruction> jumpDestinations = GetJumpDestinations();
+
+            int lastId = 0;
+            Block currentBlock = null;
+
+            foreach (Instruction instruction in _body.Instructions)
+            {
+                if (jumpDestinations.Contains(instruction))
+                {
+                    currentBlock = new Block("block_" + lastId++, GetRegion(instruction));
+                    _blocks.Add(currentBlock);
+                }
+
+                if (currentBlock == null)
+                    throw new ArgumentException("Current block should never be null");
+
+                _blockMap[instruction] = currentBlock;
+//                currentBlock.P
+            }
+        }
+
+        private void ParseInstruction(Instruction instruction)
+        {
+            
         }
     }
 }
