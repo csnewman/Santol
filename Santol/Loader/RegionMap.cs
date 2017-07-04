@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace Santol.Loader
@@ -21,6 +22,7 @@ namespace Santol.Loader
         public InstructionRange Range { get; }
         public IList<RegionMap> AssociatedRegions { get; }
         public IList<RegionMap> ChildRegions { get; }
+        public TypeReference CatchReference { get; internal set; }
 
         public RegionMap(RegionType type, InstructionRange range)
         {
