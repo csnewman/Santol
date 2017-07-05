@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using LLVMSharp;
+using Santol.Generator;
 
 namespace Santol.IR
 {
@@ -25,6 +28,26 @@ namespace Santol.IR
         public void AddMethod(IMethod method)
         {
             _methods.Add(method);
+        }
+
+        public LLVMTypeRef GetType(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
+        {
+            throw new NotSupportedException("Constant classes not supported");
+        }
+
+        public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            throw new NotImplementedException();
         }
     }
 }
