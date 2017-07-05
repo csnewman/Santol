@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using LLVMSharp;
+using Santol.Generator;
 
 namespace Santol.IR
 {
@@ -20,6 +22,11 @@ namespace Santol.IR
         public void AddField(IField field)
         {
             _fields.Add(field);
+        }
+
+        public LLVMTypeRef GetType(CodeGenerator codeGenerator)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

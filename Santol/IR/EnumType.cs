@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LLVMSharp;
+using Santol.Generator;
 
 namespace Santol.IR
 {
@@ -24,6 +26,11 @@ namespace Santol.IR
         public void AddField(IField constant)
         {
             _fields.Add(constant);
+        }
+
+        public LLVMTypeRef GetType(CodeGenerator codeGenerator)
+        {
+            return UnderlyingType.GetType(codeGenerator);
         }
     }
 }

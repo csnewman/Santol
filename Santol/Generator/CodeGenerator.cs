@@ -148,79 +148,14 @@ namespace Santol.Generator
             _globalRefs[name] = @ref;
             return @ref;
         }
-
-        public LLVMTypeRef[] ConvertTypes(TypeReference[] reference)
-        {
-            return reference?.Select(ConvertType).ToArray() ?? new LLVMTypeRef[0];
-        }
-
-        public LLVMTypeRef ConvertType(TypeReference reference)
-        {
-            switch (reference.MetadataType)
-            {
-                case MetadataType.Void:
-                    return LLVM.VoidTypeInContext(Compiler.Context);
-                case MetadataType.Boolean:
-                    return LLVM.Int1TypeInContext(Compiler.Context);
-
-                case MetadataType.Byte:
-                case MetadataType.SByte:
-                    return LLVM.Int8TypeInContext(Compiler.Context);
-
-                case MetadataType.Char:
-                case MetadataType.UInt16:
-                case MetadataType.Int16:
-                    return LLVM.Int16TypeInContext(Compiler.Context);
-
-                case MetadataType.UInt32:
-                case MetadataType.Int32:
-                    return LLVM.Int32TypeInContext(Compiler.Context);
-
-                case MetadataType.UInt64:
-                case MetadataType.Int64:
-                    return LLVM.Int64TypeInContext(Compiler.Context);
-
-                case MetadataType.Single:
-                    return LLVM.FloatTypeInContext(Compiler.Context);
-                case MetadataType.Double:
-                    return LLVM.DoubleTypeInContext(Compiler.Context);
-
-                case MetadataType.IntPtr:
-                case MetadataType.UIntPtr:
-                    return LLVM.PointerType(LLVM.Int8TypeInContext(Compiler.Context), 0);
-
-                case MetadataType.Pointer:
-                    if (reference.GetElementType().MetadataType == MetadataType.Void)
-                        return LLVM.PointerType(LLVM.Int8TypeInContext(Compiler.Context), 0);
-                    return LLVM.PointerType(ConvertType(reference.GetElementType()), 0);
-
-                case MetadataType.ValueType:
-                {
-                    TypeDefinition def = reference.Resolve();
-                    return def.IsEnum ? ConvertType(def.GetEnumUnderlyingType()) : GetStructType(def);
-                }
-
-                case MetadataType.Class:
-                    return LLVM.PointerType(GetObjectFormat(reference.Resolve()).GetStructType(), 0);
-
-                default:
-                    Console.WriteLine("reference " + reference);
-                    Console.WriteLine(" Element type " + reference.GetElementType());
-                    Console.WriteLine("  MetadataType " + reference.MetadataType);
-                    Console.WriteLine("  DeclaringType " + reference.DeclaringType);
-                    Console.WriteLine("  FullName " + reference.FullName);
-                    Console.WriteLine("  Name " + reference.Name);
-                    Console.WriteLine("  MetadataToken " + reference.MetadataToken);
-                    throw new NotImplementedException("Unknown type! " + reference);
-            }
-        }
-
+        
+        
         public LLVMValueRef GetSize(LLVMTypeRef type, LLVMTypeRef sizeType)
         {
             return LLVM.ConstPtrToInt(LLVM.ConstGEP(LLVM.ConstNull(type),
-                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Compiler.Context), 1, false)}), sizeType);
+                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Context), 1, false)}), sizeType);
 //            LLVM.BuildGEP(Compiler.Builder, LLVM.ConstNull(type),
-//                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Compiler.Context), 1, false)}, "");
+//                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Context), 1, false)}, "");
         }
 
         public LLVMValueRef GeneratePrimitiveConstant(TypeReference typeReference, object value)
