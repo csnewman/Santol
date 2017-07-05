@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using LLVMSharp;
 using Santol.Generator;
 
@@ -26,7 +27,12 @@ namespace Santol.IR
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
+        {
+            throw new NotSupportedException("Constant sequential structs not supported");
         }
     }
 }

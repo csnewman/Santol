@@ -9,5 +9,7 @@ namespace Santol.IR
         string MangledName { get; }
 
         LLVMTypeRef GetType(CodeGenerator codeGenerator);
+
+        LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value);
     }
 }

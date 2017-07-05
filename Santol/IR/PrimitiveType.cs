@@ -53,5 +53,40 @@ namespace Santol.IR
             else
                 throw new ArgumentException("Unexpected type " + this);
         }
+
+        public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
+        {
+            LLVMTypeRef type = GetType(codeGenerator);
+            if (this == Void)
+                throw new NotSupportedException("Unable to generate a constant for void type");
+            else if (this == Boolean)
+                return LLVM.ConstInt(type, (ulong) ((bool) value ? 1 : 0), false);
+            else if (this == Byte)
+                return LLVM.ConstInt(type, (byte) value, false);
+            else if (this == SByte)
+                return LLVM.ConstInt(type, (ulong) (sbyte) value, false);
+            else if (this == Char)
+                throw new NotImplementedException("Char constants not implemented");
+            else if (this == Int16)
+                return LLVM.ConstInt(type, (ulong) (short) value, true);
+            else if (this == UInt16)
+                return LLVM.ConstInt(type, (ushort) value, false);
+            else if (this == Int32)
+                return LLVM.ConstInt(type, (ulong) (int) value, true);
+            else if (this == UInt32)
+                return LLVM.ConstInt(type, (uint) value, false);
+            else if (this == Int64)
+                return LLVM.ConstInt(type, (ulong) (long) value, true);
+            else if (this == UInt64)
+                return LLVM.ConstInt(type, (ulong) value, false);
+            else if (this == Single)
+                return LLVM.ConstReal(type, (float) value);
+            else if (this == Double)
+                return LLVM.ConstReal(type, (double) value);
+            else if (this == IntPtr || this == UIntPtr)
+                throw new NotImplementedException("IntPtr/UIntPtr constants not implemented");
+            else
+                throw new ArgumentException("Unexpected type " + this);
+        }
     }
 }
