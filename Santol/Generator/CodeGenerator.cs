@@ -223,23 +223,7 @@ namespace Santol.Generator
                     throw new NotImplementedException("Unknown type! " + typeReference + " (" + value + ")");
             }
         }
-
-        public LoadedType Resolve(TypeReference @ref)
-        {
-            return Compiler.Resolve(@ref.FullName);
-        }
-
-        public bool IsEnum(TypeReference @ref)
-        {
-            LoadedType type = Resolve(@ref);
-            return type != null && type.IsEnum;
-        }
-
-        public TypeReference GetEnumType(TypeReference @ref)
-        {
-            return IsEnum(@ref) ? Resolve(@ref).EnumType : null;
-        }
-
+        
         public ObjectFormat GetObjectFormat(TypeDefinition type)
         {
             if (_objectFormatCache.ContainsKey(type.GetName()))

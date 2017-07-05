@@ -18,15 +18,12 @@ namespace Santol.Loader
         public TypeReference[] Incoming { get; set; }
         public RegionMap RegionMap { get; }
         public IList<CodeSegment> Callers { get; }
-        public IList<NodeReference> Nodes { get; }
-        private Stack<Node> _nodeStack;
 
         public CodeSegment(MethodInfo method, string name, RegionMap regionMap)
         {
             Method = method;
             Name = name;
             Instructions = new List<Instruction>();
-            Nodes = new List<NodeReference>();
             RegionMap = regionMap;
             Callers = new List<CodeSegment>();
         }
@@ -60,37 +57,9 @@ namespace Santol.Loader
             }
         }
 
-        private void PushNode(Node node)
-        {
-            Nodes.Add(node.TakeReference());
-            if (node.HasResult)
-                _nodeStack.Push(node);
-        }
+        
 
-        private NodeReference AddNode(Node node)
-        {
-            Nodes.Add(node.TakeReference());
-            return node.TakeReference();
-        }
-
-        private NodeReference PopNode()
-        {
-            return _nodeStack.Pop().TakeReference();
-        }
-
-        private Tuple<TypeReference[], NodeReference[]> GetStackInfo()
-        {
-            Node[] nodes = _nodeStack.ToArray();
-            TypeReference[] types = new TypeReference[nodes.Length];
-            NodeReference[] refs = new NodeReference[nodes.Length];
-            for (int i = 0; i < types.Length; i++)
-            {
-                Node node = nodes[i];
-                types[i] = node.ResultType;
-                refs[i] = node.TakeReference();
-            }
-            return new Tuple<TypeReference[], NodeReference[]>(types, refs);
-        }
+        
 
         public void ParseInstructions(Compiler compiler)
         {

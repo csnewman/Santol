@@ -130,21 +130,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler.cs" />
+    <Compile Include="IR\BlockRegion.cs" />
+    <Compile Include="IR\CatchCase.cs" />
     <Compile Include="IR\ClassType.cs" />
     <Compile Include="IR\ConstantField.cs" />
     <Compile Include="IR\EnumType.cs" />
     <Compile Include="IR\IField.cs" />
     <Compile Include="IR\IMethod.cs" />
-    <Compile Include="IR\IZone.cs" />
     <Compile Include="IR\IType.cs" />
     <Compile Include="IR\LocalField.cs" />
     <Compile Include="IR\Block.cs" />
     <Compile Include="IR\PrimitiveType.cs" />
     <Compile Include="IR\StandardMethod.cs" />
-    <Compile Include="IR\StandardZone.cs" />
     <Compile Include="IR\StaticField.cs" />
     <Compile Include="IR\SequentialStructType.cs" />
     <Compile Include="IR\TypeHelper.cs" />
+    <Compile Include="IR\Zone.cs" />
     <Compile Include="Loader\AssemblyLoader.cs" />
     <Compile Include="Loader\MethodBodyLoader.cs" />
     <Compile Include="Loader\RegionMap.cs" />
@@ -153,7 +154,6 @@
     <Compile Include="Generator\CodeGenerator.cs" />
     <Compile Include="Generator\FunctionGenerator.cs" />
     <Compile Include="Loader\InstructionRange.cs" />
-    <Compile Include="Loader\LoadedType.cs" />
     <Compile Include="Nodes\Branch.cs" />
     <Compile Include="Nodes\Call.cs" />
     <Compile Include="Nodes\CallVirtual.cs" />
