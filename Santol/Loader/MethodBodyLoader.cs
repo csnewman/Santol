@@ -68,6 +68,7 @@ namespace Santol.Loader
 
             // Creates blocks
             GenerateBlocks();
+            ParseBlocks(new List<Block>());
         }
 
         private IList<Instruction> GetJumpDestinations()
@@ -342,6 +343,8 @@ namespace Santol.Loader
             }
             if (parsed > 0)
                 ParseBlocks(parsedBlocks);
+            else if (parsedBlocks.Count != _blocks.Count)
+                throw new ArgumentException($"Failed to parse all blocks, parsed {parsedBlocks.Count}/{_blocks.Count}");
         }
 
         private void ParseBlock(Block block)
@@ -352,7 +355,7 @@ namespace Santol.Loader
             if (!block.ForcedNoIncomings)
             {
                 IType[] incoming = block.IncomingTypes;
-                if(incoming == null)
+                if (incoming == null)
                     throw new ArgumentException("Incoming types are yet to be resolved");
 
                 for (int i = 0; i < incoming.Length; i++)
@@ -361,7 +364,6 @@ namespace Santol.Loader
 
             foreach (Instruction instruction in instructions)
             {
-                
             }
         }
 
