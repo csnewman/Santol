@@ -7,7 +7,7 @@ namespace Santol
         static void Main(string[] args)
         {
             Compiler compiler = new Compiler();
-            compiler.Init();
+            compiler.InitLLVM();
             compiler.TargetPlatform = "i386-pc-none-elf";
             compiler.OptimisationLevel = 3;
 //
