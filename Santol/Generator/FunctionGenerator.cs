@@ -8,8 +8,7 @@ namespace Santol.Generator
 {
     public class FunctionGenerator
     {
-        private readonly Compiler _compiler;
-        private readonly CodeGenerator _cgen;
+        private readonly CodeGenerator _codeGenerator;
         public MethodDefinition Definition;
         public LLVMValueRef FunctionRef { get; }
         public LLVMValueRef[] Locals { get; set; }
@@ -19,10 +18,9 @@ namespace Santol.Generator
         public string CurrentBlock { get; private set; }
         public LLVMValueRef[] CurrentPhis => _blockPhis[CurrentBlock];
 
-        public FunctionGenerator(CodeGenerator cgen, Mono.Cecil.MethodDefinition definition, LLVMValueRef functionRef)
+        public FunctionGenerator(CodeGenerator codeGenerator, Mono.Cecil.MethodDefinition definition, LLVMValueRef functionRef)
         {
-            _compiler = cgen.Compiler;
-            _cgen = cgen;
+            _codeGenerator = codeGenerator;
             Definition = definition;
             FunctionRef = functionRef;
             _namedBlocks = new Dictionary<string, LLVMBasicBlockRef>();
@@ -37,7 +35,7 @@ namespace Santol.Generator
             LLVMValueRef[] phis = new LLVMValueRef[incomings?.Length ?? 0];
             for (int i = 0; i < phis.Length; i++)
             {
-                LLVMValueRef phi = LLVM.BuildPhi(_compiler.Builder, incomings[i], "in_" + i);
+                LLVMValueRef phi = LLVM.BuildPhi(_codeGenerator.Builder, incomings[i], "in_" + i);
                 phis[i] = phi;
             }
             _blockPhis[name] = phis;
@@ -50,7 +48,7 @@ namespace Santol.Generator
 
         public void SelectBlock(string name)
         {
-            LLVM.PositionBuilderAtEnd(_compiler.Builder, _namedBlocks[name]);
+            LLVM.PositionBuilderAtEnd(_codeGenerator.Builder, _namedBlocks[name]);
             CurrentBlock = name;
         }
 
@@ -76,7 +74,7 @@ namespace Santol.Generator
 
         public void Branch(string block, LLVMValueRef[] vals)
         {
-            LLVM.BuildBr(_compiler.Builder, _namedBlocks[block]);
+            LLVM.BuildBr(_codeGenerator.Builder, _namedBlocks[block]);
 
             if (vals == null) return;
             LLVMValueRef[] phis = _blockPhis[block];
@@ -92,7 +90,7 @@ namespace Santol.Generator
 
         public void BranchConditional(LLVMValueRef condition, string block, string elseBlock, LLVMValueRef[] vals)
         {
-            LLVM.BuildCondBr(_compiler.Builder, condition, _namedBlocks[block], _namedBlocks[elseBlock]);
+            LLVM.BuildCondBr(_codeGenerator.Builder, condition, _namedBlocks[block], _namedBlocks[elseBlock]);
 
             if (vals == null) return;
             LLVMBasicBlockRef blockref = _namedBlocks[CurrentBlock];
@@ -113,72 +111,72 @@ namespace Santol.Generator
 
         public LLVMValueRef LoadLocal(int index)
         {
-            return LLVM.BuildLoad(_compiler.Builder, Locals[index], "");
+            return LLVM.BuildLoad(_codeGenerator.Builder, Locals[index], "");
         }
 
         public LLVMValueRef LoadDirect(LLVMValueRef address)
         {
-            return LLVM.BuildLoad(_compiler.Builder, address, "");
+            return LLVM.BuildLoad(_codeGenerator.Builder, address, "");
         }
 
         public void StoreLocal(int index, LLVMValueRef value)
         {
-            LLVM.BuildStore(_compiler.Builder, value, Locals[index]);
+            LLVM.BuildStore(_codeGenerator.Builder, value, Locals[index]);
         }
 
         public void StoreDirect(LLVMValueRef value, LLVMValueRef address)
         {
-            LLVM.BuildStore(_compiler.Builder, value, address);
+            LLVM.BuildStore(_codeGenerator.Builder, value, address);
         }
 
         public LLVMValueRef GetStructElement(LLVMValueRef address, int index)
         {
-            return LLVM.BuildStructGEP(_compiler.Builder, address, (uint) index, "");
+            return LLVM.BuildStructGEP(_codeGenerator.Builder, address, (uint) index, "");
         }
 
         public LLVMValueRef AddInts(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildAdd(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildAdd(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef SubtractInts(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildSub(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildSub(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef MultiplyInts(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildMul(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildMul(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef DivideInts(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildSDiv(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildSDiv(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef RemainderInts(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildSRem(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildSRem(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef ShiftLeft(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildShl(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildShl(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef Or(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildOr(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildOr(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef XOr(LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildXor(_compiler.Builder, v1, v2, "");
+            return LLVM.BuildXor(_codeGenerator.Builder, v1, v2, "");
         }
 
         public LLVMValueRef CompareInts(LLVMIntPredicate op, LLVMValueRef v1, LLVMValueRef v2)
         {
-            return LLVM.BuildICmp(_compiler.Builder, op, v1, v2, "");
+            return LLVM.BuildICmp(_codeGenerator.Builder, op, v1, v2, "");
         }
 
 //        public LLVMValueRef? GenerateCall(MethodDefinition method, TypeReference[] argTypes,
@@ -202,20 +200,20 @@ namespace Santol.Generator
 
         public LLVMValueRef? GenerateCall(MethodReference method, LLVMValueRef[] args)
         {
-            LLVMValueRef func = _cgen.GetFunctionRef(method);
+            LLVMValueRef func = _codeGenerator.GetFunctionRef(method);
             
             if (method.ReturnType.MetadataType != MetadataType.Void)
-                return LLVM.BuildCall(_compiler.Builder, func, args, "");
-            LLVM.BuildCall(_compiler.Builder, func, args, "");
+                return LLVM.BuildCall(_codeGenerator.Builder, func, args, "");
+            LLVM.BuildCall(_codeGenerator.Builder, func, args, "");
             return null;
         }
 
         public void Return(LLVMValueRef? val)
         {
             if (val.HasValue)
-                LLVM.BuildRet(_compiler.Builder, val.Value);
+                LLVM.BuildRet(_codeGenerator.Builder, val.Value);
             else
-                LLVM.BuildRetVoid(_compiler.Builder);
+                LLVM.BuildRetVoid(_codeGenerator.Builder);
         }
     }
 }
