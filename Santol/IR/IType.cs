@@ -11,5 +11,10 @@ namespace Santol.IR
         LLVMTypeRef GetType(CodeGenerator codeGenerator);
 
         LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value);
+
+        LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value);
+
+        LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value);
+        
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LLVMSharp;
 using Santol.Generator;
 
@@ -22,6 +23,36 @@ namespace Santol.IR
         public static readonly PrimitiveType IntPtr = new PrimitiveType("intptr");
         public static readonly PrimitiveType UIntPtr = new PrimitiveType("uintptr");
 
+
+        private enum ConversionMethod
+        {
+            Bitcast,
+            ZeroExtend,
+            SignExtend,
+            Truncate,
+            IntToPtr
+        }
+
+        private static readonly Dictionary<Tuple<PrimitiveType, PrimitiveType>, ConversionMethod> Conversions =
+            new Dictionary<Tuple<PrimitiveType, PrimitiveType>, ConversionMethod>
+            {
+                [new Tuple<PrimitiveType, PrimitiveType>(Boolean, Int32)] = ConversionMethod.ZeroExtend,
+                [new Tuple<PrimitiveType, PrimitiveType>(Char, Byte)] = ConversionMethod.Truncate,
+                [new Tuple<PrimitiveType, PrimitiveType>(Char, Int32)] = ConversionMethod.ZeroExtend,
+                [new Tuple<PrimitiveType, PrimitiveType>(UInt16, Char)] = ConversionMethod.Bitcast,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int32, Byte)] = ConversionMethod.Truncate,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int32, Boolean)] = ConversionMethod.Truncate,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int32, Char)] = ConversionMethod.Truncate,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int32, UInt16)] = ConversionMethod.Truncate,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int32, IntPtr)] = ConversionMethod.IntToPtr,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int32, Int64)] = ConversionMethod.SignExtend,
+                [new Tuple<PrimitiveType, PrimitiveType>(UInt32, Int32)] = ConversionMethod.Bitcast,
+                [new Tuple<PrimitiveType, PrimitiveType>(UInt32, UIntPtr)] = ConversionMethod.IntToPtr,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int64, UInt64)] = ConversionMethod.Bitcast,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int64, UIntPtr)] = ConversionMethod.IntToPtr,
+                [new Tuple<PrimitiveType, PrimitiveType>(IntPtr, UIntPtr)] = ConversionMethod.Bitcast
+            };
+
         public string MangledName => Name;
         public string Name { get; }
 
@@ -34,24 +65,23 @@ namespace Santol.IR
         {
             if (this == Void)
                 return LLVM.VoidTypeInContext(codeGenerator.Context);
-            else if (this == Boolean)
+            if (this == Boolean)
                 return LLVM.Int1TypeInContext(codeGenerator.Context);
-            else if (this == Byte || this == SByte)
+            if (this == Byte || this == SByte)
                 return LLVM.Int8TypeInContext(codeGenerator.Context);
-            else if (this == Char || this == Int16 || this == UInt16)
+            if (this == Char || this == Int16 || this == UInt16)
                 return LLVM.Int16TypeInContext(codeGenerator.Context);
-            else if (this == Int32 || this == UInt32)
+            if (this == Int32 || this == UInt32)
                 return LLVM.Int32TypeInContext(codeGenerator.Context);
-            else if (this == Int64 || this == UInt64)
+            if (this == Int64 || this == UInt64)
                 return LLVM.Int64TypeInContext(codeGenerator.Context);
-            else if (this == Single)
+            if (this == Single)
                 return LLVM.FloatTypeInContext(codeGenerator.Context);
-            else if (this == Double)
+            if (this == Double)
                 return LLVM.DoubleTypeInContext(codeGenerator.Context);
-            else if (this == IntPtr || this == UIntPtr)
+            if (this == IntPtr || this == UIntPtr)
                 return LLVM.PointerType(LLVM.Int8TypeInContext(codeGenerator.Context), 0);
-            else
-                throw new ArgumentException("Unexpected type " + this);
+            throw new ArgumentException("Unexpected type " + this);
         }
 
         public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
@@ -59,34 +89,87 @@ namespace Santol.IR
             LLVMTypeRef type = GetType(codeGenerator);
             if (this == Void)
                 throw new NotSupportedException("Unable to generate a constant for void type");
-            else if (this == Boolean)
+            if (this == Boolean)
                 return LLVM.ConstInt(type, (ulong) ((bool) value ? 1 : 0), false);
-            else if (this == Byte)
+            if (this == Byte)
                 return LLVM.ConstInt(type, (byte) value, false);
-            else if (this == SByte)
+            if (this == SByte)
                 return LLVM.ConstInt(type, (ulong) (sbyte) value, false);
-            else if (this == Char)
+            if (this == Char)
                 throw new NotImplementedException("Char constants not implemented");
-            else if (this == Int16)
+            if (this == Int16)
                 return LLVM.ConstInt(type, (ulong) (short) value, true);
-            else if (this == UInt16)
+            if (this == UInt16)
                 return LLVM.ConstInt(type, (ushort) value, false);
-            else if (this == Int32)
+            if (this == Int32)
                 return LLVM.ConstInt(type, (ulong) (int) value, true);
-            else if (this == UInt32)
+            if (this == UInt32)
                 return LLVM.ConstInt(type, (uint) value, false);
-            else if (this == Int64)
+            if (this == Int64)
                 return LLVM.ConstInt(type, (ulong) (long) value, true);
-            else if (this == UInt64)
+            if (this == UInt64)
                 return LLVM.ConstInt(type, (ulong) value, false);
-            else if (this == Single)
+            if (this == Single)
                 return LLVM.ConstReal(type, (float) value);
-            else if (this == Double)
+            if (this == Double)
                 return LLVM.ConstReal(type, (double) value);
-            else if (this == IntPtr || this == UIntPtr)
+            if (this == IntPtr || this == UIntPtr)
                 throw new NotImplementedException("IntPtr/UIntPtr constants not implemented");
-            else
-                throw new ArgumentException("Unexpected type " + this);
+            throw new ArgumentException("Unexpected type " + this);
+        }
+
+        public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            if (type is PrimitiveType)
+            {
+                Tuple<PrimitiveType, PrimitiveType> conversion =
+                    new Tuple<PrimitiveType, PrimitiveType>(this, (PrimitiveType) type);
+                if (!Conversions.ContainsKey(conversion))
+                    return null;
+                switch (Conversions[conversion])
+                {
+                    case ConversionMethod.Bitcast:
+                        return LLVM.BuildBitCast(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
+                    case ConversionMethod.ZeroExtend:
+                        return LLVM.BuildZExt(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
+                    case ConversionMethod.SignExtend:
+                        return LLVM.BuildSExt(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
+                    case ConversionMethod.Truncate:
+                        return LLVM.BuildTrunc(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
+                    case ConversionMethod.IntToPtr:
+                        return LLVM.BuildIntToPtr(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+            return null;
+        }
+
+        public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            if (type is PrimitiveType)
+            {
+                Tuple<PrimitiveType, PrimitiveType> conversion =
+                    new Tuple<PrimitiveType, PrimitiveType>((PrimitiveType) type, this);
+                if (!Conversions.ContainsKey(conversion))
+                    return null;
+                switch (Conversions[conversion])
+                {
+                    case ConversionMethod.Bitcast:
+                        return LLVM.BuildBitCast(codeGenerator.Builder, value, GetType(codeGenerator), "");
+                    case ConversionMethod.ZeroExtend:
+                        return LLVM.BuildZExt(codeGenerator.Builder, value, GetType(codeGenerator), "");
+                    case ConversionMethod.SignExtend:
+                        return LLVM.BuildSExt(codeGenerator.Builder, value, GetType(codeGenerator), "");
+                    case ConversionMethod.Truncate:
+                        return LLVM.BuildTrunc(codeGenerator.Builder, value, GetType(codeGenerator), "");
+                    case ConversionMethod.IntToPtr:
+                        return LLVM.BuildIntToPtr(codeGenerator.Builder, value, GetType(codeGenerator), "");
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+            return null;
         }
     }
 }

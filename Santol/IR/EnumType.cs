@@ -37,5 +37,15 @@ namespace Santol.IR
         {
             return UnderlyingType.GenerateConstantValue(codeGenerator, value);
         }
+
+        public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            return UnderlyingType.ConvertTo(codeGenerator, type, value);
+        }
+
+        public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            return UnderlyingType.ConvertFrom(codeGenerator, type, value);
+        }
     }
 }

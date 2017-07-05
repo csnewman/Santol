@@ -34,5 +34,15 @@ namespace Santol.IR
         {
             throw new NotSupportedException("Constant sequential structs not supported");
         }
+
+        public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

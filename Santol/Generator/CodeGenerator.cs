@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
+using Santol.IR;
 using Santol.Loader;
 using Santol.Objects;
 using MethodDefinition = Mono.Cecil.MethodDefinition;
@@ -85,6 +86,20 @@ namespace Santol.Generator
             LLVM.DisposeTargetMachine(machineRef);
         }
 
+        public LLVMValueRef GenerateConversion(IType from, IType to, LLVMValueRef value)
+        {
+            if (from.Equals(to))
+                return value;
+            LLVMValueRef? converted = from.ConvertTo(this, to, value);
+            if (converted.HasValue)
+                return converted.Value;
+            converted = to.ConvertFrom(this, from, value);
+            if (converted.HasValue)
+                return converted.Value;
+            throw new NotSupportedException("Unable to convert from " + from + " to " + to);
+        }
+
+
         public FunctionGenerator DefineFunction(MethodDefinition definition)
         {
             LLVMValueRef functionRef = GetFunctionRef(definition);
@@ -148,8 +163,8 @@ namespace Santol.Generator
             _globalRefs[name] = @ref;
             return @ref;
         }
-        
-        
+
+
         public LLVMValueRef GetSize(LLVMTypeRef type, LLVMTypeRef sizeType)
         {
             return LLVM.ConstPtrToInt(LLVM.ConstGEP(LLVM.ConstNull(type),
@@ -158,59 +173,6 @@ namespace Santol.Generator
 //                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(Context), 1, false)}, "");
         }
 
-        public LLVMValueRef GeneratePrimitiveConstant(TypeReference typeReference, object value)
-        {
-            if (typeReference.MetadataType == MetadataType.ValueType)
-            {
-                LoadedType def = Resolve(typeReference);
-                if (def.IsEnum)
-                    return GeneratePrimitiveConstant(def.EnumType, value);
-                throw new NotImplementedException("Unable to handle structs");
-            }
-
-            LLVMTypeRef type = ConvertType(typeReference);
-
-            switch (typeReference.MetadataType)
-            {
-                case MetadataType.Boolean:
-                    return LLVM.ConstInt(type, (ulong) (((bool) value) ? 1 : 0), false);
-
-                case MetadataType.Byte:
-                    return LLVM.ConstInt(type, (byte) value, false);
-                case MetadataType.SByte:
-                    return LLVM.ConstInt(type, (ulong) (sbyte) value, true);
-
-                case MetadataType.Char:
-                    throw new NotImplementedException("Char data " + value.GetType() + "=" + value);
-
-                case MetadataType.UInt16:
-                    return LLVM.ConstInt(type, (ushort) value, false);
-                case MetadataType.Int16:
-                    return LLVM.ConstInt(type, (ulong) (short) value, true);
-
-                case MetadataType.UInt32:
-                    return LLVM.ConstInt(type, (uint) value, false);
-                case MetadataType.Int32:
-                    return LLVM.ConstInt(type, (ulong) (int) value, true);
-
-                case MetadataType.UInt64:
-                    return LLVM.ConstInt(type, (ulong) value, false);
-                case MetadataType.Int64:
-                    return LLVM.ConstInt(type, (ulong) (long) value, true);
-
-                case MetadataType.Single:
-                    return LLVM.ConstReal(type, (float) value);
-                case MetadataType.Double:
-                    return LLVM.ConstReal(type, (double) value);
-
-                case MetadataType.IntPtr:
-                    throw new NotImplementedException("IntPtr data " + value.GetType() + "=" + value);
-                case MetadataType.UIntPtr:
-                    throw new NotImplementedException("UIntPtr data " + value.GetType() + "=" + value);
-                default:
-                    throw new NotImplementedException("Unknown type! " + typeReference + " (" + value + ")");
-            }
-        }
 
         public ObjectFormat GetObjectFormat(TypeDefinition type)
         {
@@ -220,128 +182,6 @@ namespace Santol.Generator
             ObjectFormat format = new ObjectFormat(this, type);
             _objectFormatCache[type.GetName()] = format;
             return format;
-        }
-
-        public LLVMValueRef GenerateConversion(TypeReference sourceType, TypeReference destType, LLVMValueRef value)
-        {
-            if (sourceType == destType)
-                return value;
-            if (sourceType.Resolve().Is(destType.Resolve()))
-                return value;
-
-            if (sourceType.MetadataType == MetadataType.ValueType)
-            {
-                LoadedType def = Resolve(sourceType);
-                if (def.IsEnum)
-                    return GenerateConversion(def.EnumType, destType, value);
-                throw new NotImplementedException("Unable to handle structs");
-            }
-
-            if (destType.MetadataType == MetadataType.ValueType)
-            {
-                LoadedType def = Resolve(destType);
-                if (def.IsEnum)
-                    return GenerateConversion(sourceType, def.EnumType, value);
-                throw new NotImplementedException("Unable to handle structs");
-            }
-
-            switch (sourceType.MetadataType)
-            {
-                case MetadataType.Boolean:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.Int32:
-                            return LLVM.BuildZExt(Compiler.Builder, value, ConvertType(destType), "");
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                case MetadataType.Char:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.Byte:
-                            return LLVM.BuildTrunc(Compiler.Builder, value, ConvertType(destType), "");
-                        case MetadataType.Int32:
-                            return LLVM.BuildZExt(Compiler.Builder, value, ConvertType(destType), "");
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                case MetadataType.UInt16:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.Char:
-                            //TODO: Check
-                            return value;
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-
-                case MetadataType.UInt32:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.Int32:
-                            //TODO: Check
-                            return value;
-                        case MetadataType.UIntPtr:
-                            return LLVM.BuildIntToPtr(Compiler.Builder, value, ConvertType(destType), "");
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                case MetadataType.Int32:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.Byte:
-                        case MetadataType.Boolean:
-                        case MetadataType.Char:
-                        case MetadataType.UInt16:
-                            return LLVM.BuildTrunc(Compiler.Builder, value, ConvertType(destType), "");
-                        case MetadataType.IntPtr:
-                            return LLVM.BuildIntToPtr(Compiler.Builder, value, ConvertType(destType), "");
-                        case MetadataType.Int64:
-                            return LLVM.BuildSExt(Compiler.Builder, value, ConvertType(destType), "");
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                case MetadataType.Int64:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.UInt64:
-                            //TODO: Check
-                            return value;
-                        case MetadataType.UIntPtr:
-                            return LLVM.BuildIntToPtr(Compiler.Builder, value, ConvertType(destType), "");
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                case MetadataType.IntPtr:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.UIntPtr:
-                            //TODO: Check
-                            return value;
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                case MetadataType.Object:
-                case MetadataType.Class:
-                    switch (destType.MetadataType)
-                    {
-                        case MetadataType.Object:
-                        case MetadataType.Class:
-                            return GetObjectFormat(sourceType.Resolve()).UpcastTo(value, destType.Resolve());
-                        default:
-                            throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-                    }
-
-                default:
-                    throw new NotImplementedException("Unable to convert " + sourceType + " to " + destType);
-            }
         }
     }
 }
