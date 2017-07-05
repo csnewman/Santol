@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Santol.IR;
+using Santol.Nodes;
 
 namespace Santol.Loader
 {
@@ -16,8 +18,10 @@ namespace Santol.Loader
         private IList<Instruction> _noIncomings;
         private BlockRegion _baseRegion;
         private IDictionary<RegionMap, BlockRegion> _regionMappings;
-        private IDictionary<Instruction, Block> _blockMap;
         private IList<Block> _blocks;
+        private IDictionary<Instruction, Block> _blockMap;
+        private IDictionary<Block, IList<Instruction>> _blockInstructions;
+        private Stack<Node> _nodeStack;
 
         private void PrintInstructions()
         {
@@ -121,7 +125,7 @@ namespace Santol.Loader
             IList<Instruction> jumpDestinations = GetJumpDestinations();
 
             //Find all end points
-            List<Instruction> endPoints = new List<Instruction>();
+            IList<Instruction> endPoints = new List<Instruction>();
             foreach (Instruction instruction in _body.Instructions)
                 if (jumpDestinations.Contains(instruction) && instruction.Previous != null)
                     endPoints.Add(instruction.Previous);
@@ -294,33 +298,87 @@ namespace Santol.Loader
 
         private void GenerateBlocks()
         {
-            _blockMap = new Dictionary<Instruction, Block>();
             _blocks = new List<Block>();
+            _blockMap = new Dictionary<Instruction, Block>();
+            _blockInstructions = new Dictionary<Block, IList<Instruction>>();
 
             IList<Instruction> jumpDestinations = GetJumpDestinations();
 
             int lastId = 0;
             Block currentBlock = null;
-
+            IList<Instruction> instructions = null;
             foreach (Instruction instruction in _body.Instructions)
             {
                 if (jumpDestinations.Contains(instruction))
                 {
-                    currentBlock = new Block("block_" + lastId++, GetRegion(instruction));
+                    BlockRegion region = GetRegion(instruction);
+                    currentBlock = new Block("block_" + lastId++, region);
+                    currentBlock.ForcedNoIncomings = _noIncomings.Contains(instruction);
                     _blocks.Add(currentBlock);
+                    region.AddBlock(currentBlock);
+                    instructions = new List<Instruction>();
+                    _blockInstructions[currentBlock] = instructions;
                 }
 
                 if (currentBlock == null)
                     throw new ArgumentException("Current block should never be null");
 
                 _blockMap[instruction] = currentBlock;
-//                currentBlock.P
+                instructions.Add(instruction);
             }
+        }
+
+        private void ParseBlocks(IList<Block> parsedBlocks)
+        {
+            int parsed = 0;
+            foreach (Block block in _blocks)
+            {
+                if (parsedBlocks.Contains(block))
+                    continue;
+                if (!block.ForcedNoIncomings && block.IncomingTypes == null) continue;
+                parsedBlocks.Add(block);
+                ParseBlock(block);
+                parsed++;
+            }
+            if (parsed > 0)
+                ParseBlocks(parsedBlocks);
+        }
+
+        private void ParseBlock(Block block)
+        {
+            _nodeStack = new Stack<Node>();
+            IList<Instruction> instructions = _blockInstructions[block];
+
+            if (!block.ForcedNoIncomings)
+            {
+                IType[] incoming = block.IncomingTypes;
+                if(incoming == null)
+                    throw new ArgumentException("Incoming types are yet to be resolved");
+
+                for (int i = 0; i < incoming.Length; i++)
+                    PushNode(new IncomingValue(compiler, Incoming[i], i));
+            }
+
+            foreach (Instruction instruction in instructions)
+            {
+                
+            }
+        }
+
+        private void PushNode(Node node)
+        {
+            if (!node.HasResult)
+                throw new ArgumentException("Nodes without results can not be pushed on the stack");
+            _nodeStack.Push(node);
+        }
+
+        private NodeReference PopNode()
+        {
+            return _nodeStack.Pop().TakeReference();
         }
 
         private void ParseInstruction(Instruction instruction)
         {
-            
         }
     }
 }
