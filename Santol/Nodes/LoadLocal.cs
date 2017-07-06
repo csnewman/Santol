@@ -1,25 +1,27 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class LoadLocal : Node
     {
-        public VariableDefinition Variable { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType => Variable.VariableType;
+        public override IType ResultType { get; }
+        public int Index { get; }
 
-        public LoadLocal(Compiler compiler, VariableDefinition definition) : base(compiler)
+        public LoadLocal(IType type, int index)
         {
-            Variable = definition;
+            ResultType = type;
+            Index = index;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.LoadLocal(Variable.Index));
+            SetRef(fgen.LoadLocal(Index));
         }
 
-        public override string ToFullString() => $"LoadLocal [Variable: {Variable}, Type: {ResultType}]";
+        public override string ToFullString() => $"LoadLocal [Index: {Index}, Type: {ResultType}]";
     }
 }

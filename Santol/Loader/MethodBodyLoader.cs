@@ -4,6 +4,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Santol.Generator;
 using Santol.IR;
 using Santol.Nodes;
 
@@ -12,6 +13,7 @@ namespace Santol.Loader
     public class MethodBodyLoader
     {
         private AssemblyLoader _assemblyLoader;
+        private CodeGenerator _codeGenerator;
         private MethodBody _body;
         private ILProcessor _processor;
         private RegionMap _regionMap;
@@ -359,11 +361,56 @@ namespace Santol.Loader
                     throw new ArgumentException("Incoming types are yet to be resolved");
 
                 for (int i = 0; i < incoming.Length; i++)
-                    PushNode(new IncomingValue(compiler, Incoming[i], i));
+                    PushNode(new IncomingValue(incoming[i], i));
             }
 
             foreach (Instruction instruction in instructions)
             {
+                switch (instruction.OpCode.Code)
+                {
+                    case Code.Nop:
+                        break;
+
+                    case Code.Ldc_I4:
+                        PushNode(new LoadPrimitiveConstant(PrimitiveType.Int32, instruction.Operand));
+                        break;
+                    case Code.Ldc_I8:
+                        PushNode(new LoadPrimitiveConstant(PrimitiveType.Int64, instruction.Operand));
+                        break;
+                    case Code.Ldc_R4:
+                        PushNode(new LoadPrimitiveConstant(PrimitiveType.Single, instruction.Operand));
+                        break;
+                    case Code.Ldc_R8:
+                        PushNode(new LoadPrimitiveConstant(PrimitiveType.Double, instruction.Operand));
+                        break;
+
+                    case Code.Ldloc:
+                    {
+                        VariableDefinition definition = (VariableDefinition) instruction.Operand;
+                        PushNode(new LoadLocal(_assemblyLoader.ResolveType(definition.VariableType), definition.Index));
+                        break;
+                    }
+                    case Code.Ldarg:
+                    {
+                        ParameterDefinition definition = (ParameterDefinition) instruction.Operand;
+                        PushNode(new LoadArg(_assemblyLoader.ResolveType(definition.ParameterType), definition.Index));
+                        break;
+                    }
+                    case Code.Ldsfld:
+                        PushNode(new LoadStatic(_codeGenerator, (FieldReference) instruction.Operand));
+                        break;
+                    case Code.Ldfld:
+                        PushNode(new LoadField(_codeGenerator, PopNode(), (FieldReference) instruction.Operand));
+                        break;
+
+                    default:
+                    {
+                        Node[] stack = _nodeStack.ToArray();
+                        for (int i = 0; i < stack.Length; i++)
+                            Console.WriteLine($"{i}: {stack[i]} ({stack[i].ResultType})");
+                        throw new NotImplementedException("Unknown opcode " + instruction);
+                    }
+                }
             }
         }
 
@@ -377,10 +424,6 @@ namespace Santol.Loader
         private NodeReference PopNode()
         {
             return _nodeStack.Pop().TakeReference();
-        }
-
-        private void ParseInstruction(Instruction instruction)
-        {
         }
     }
 }

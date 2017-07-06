@@ -1,24 +1,24 @@
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class LoadPrimitiveConstant : Node
     {
         public override bool HasResult => true;
-        public override TypeReference ResultType { get; }
-
+        public override IType ResultType { get; }
         public object Value { get; }
 
-        public LoadPrimitiveConstant(Compiler compiler, TypeReference type, object value) : base(compiler)
+        public LoadPrimitiveConstant(IType type, object value)
         {
             ResultType = type;
             Value = value;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(CodeGenerator.GeneratePrimitiveConstant(ResultType, Value));
+            SetRef(ResultType.GenerateConstantValue(codeGenerator, Value));
         }
 
         public override string ToFullString() => $"LoadPrimitiveConstant [Type: {ResultType}, Value: {Value}]";

@@ -1,25 +1,26 @@
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class LoadArg : Node
     {
-        public ParameterDefinition Parameter { get; }
-        public int Slot => Parameter.Index;
         public override bool HasResult => true;
-        public override TypeReference ResultType => Parameter.ParameterType;
+        public override IType ResultType { get; }
+        public int Index { get; }
 
-        public LoadArg(Compiler compiler, ParameterDefinition definition) : base(compiler)
+        public LoadArg(IType type, int index)
         {
-            Parameter = definition;
+            ResultType = type;
+            Index = index;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.GetParam(Slot + (fgen.Definition.HasThis && !fgen.Definition.ExplicitThis ? 1 : 0)));
+            SetRef(fgen.GetParam(Index + (fgen.Definition.HasThis && !fgen.Definition.ExplicitThis ? 1 : 0)));
         }
 
-        public override string ToFullString() => $"LoadArg [Slot: {Slot}, Parameter: {Parameter}, Type: {ResultType}]";
+        public override string ToFullString() => $"LoadArg [Index: {Index}, Type: {ResultType}]";
     }
 }

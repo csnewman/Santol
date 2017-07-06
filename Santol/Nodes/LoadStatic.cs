@@ -5,24 +5,25 @@ using System.Text;
 using System.Threading.Tasks;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class LoadStatic : Node
     {
-        public FieldReference Field { get; }
+        public IField Field { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType => Field.FieldType;
-
-        public LoadStatic(Compiler compiler, FieldReference definition) : base(compiler)
+        public override IType ResultType => Field.Type;
+        
+        public LoadStatic(IField field)
         {
-            Field = definition;
+            Field = field;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(
-                fgen.LoadDirect(CodeGenerator.GetGlobal(Field.GetName(), CodeGenerator.ConvertType(Field.FieldType))));
+            SetRef(
+                fgen.LoadDirect(codeGenerator.GetGlobal(Field.GetName(), CodeGenerator.ConvertType(Field.FieldType))));
         }
 
         public override string ToFullString() => $"LoadLocal [Field: {Field}, Type: {ResultType}]";
