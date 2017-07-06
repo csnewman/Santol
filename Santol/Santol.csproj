@@ -169,6 +169,7 @@
     <Compile Include="Nodes\LoadStatic.cs" />
     <Compile Include="Nodes\NewObject.cs" />
     <Compile Include="Nodes\Node.cs" />
+    <Compile Include="Nodes\NodeReference.cs" />
     <Compile Include="Nodes\Numeric.cs" />
     <Compile Include="Nodes\Return.cs" />
     <Compile Include="Nodes\StoreDirect.cs" />

@@ -3,32 +3,27 @@ using System.Collections.Generic;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public abstract class Node
     {
-        protected readonly Compiler Compiler;
-        protected CodeGenerator CodeGenerator => Compiler.CodeGenerator;
         private readonly IList<NodeReference> _references;
         private Node _replacement;
         private LLVMValueRef _llvmRef;
         public abstract bool HasResult { get; }
-        public abstract TypeReference ResultType { get; }
+        public abstract IType ResultType { get; }
 
-        protected Node(Compiler compiler)
+        protected Node()
         {
-            Compiler = compiler;
             _references = new List<NodeReference>();
         }
 
         public NodeReference TakeReference()
         {
             if (_replacement != null)
-            {
-                Console.WriteLine("Tried to take reference to replace node!");
                 return _replacement.TakeReference();
-            }
 
             NodeReference @ref = new NodeReference(this);
             _references.Add(@ref);
@@ -42,48 +37,28 @@ namespace Santol.Nodes
                 nodeReference.Update(with);
         }
 
-        public abstract void Generate(FunctionGenerator fgen);
+        public abstract void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen);
 
-        protected void SetLlvmRef(TypeReference from, LLVMValueRef @ref)
+        protected void SetRef(CodeGenerator codeGenerator, IType from, LLVMValueRef @ref)
         {
-            _llvmRef = CodeGenerator.GenerateConversion(from, ResultType, @ref);
+            _llvmRef = codeGenerator.GenerateConversion(from, ResultType, @ref);
         }
 
-        protected void SetLlvmRef(LLVMValueRef @ref)
+        protected void SetRef(LLVMValueRef @ref)
         {
             _llvmRef = @ref;
         }
 
-        public LLVMValueRef GetLlvmRef(TypeReference target)
+        public LLVMValueRef GetRef(CodeGenerator codeGenerator, IType target)
         {
-            return CodeGenerator.GenerateConversion(ResultType, target, _llvmRef);
+            return codeGenerator.GenerateConversion(ResultType, target, _llvmRef);
         }
 
-        public LLVMValueRef GetLlvmRef()
+        public LLVMValueRef GetRef()
         {
             return _llvmRef;
         }
 
         public abstract string ToFullString();
-    }
-
-    public class NodeReference
-    {
-        public Node Node { get; private set; }
-        public TypeReference ResultType => Node.ResultType;
-
-        public NodeReference(Node node)
-        {
-            Node = node;
-        }
-
-        public void Update(Node node)
-        {
-            Node = node;
-        }
-
-        public LLVMValueRef GetLlvmRef(TypeReference target) => Node.GetLlvmRef(target);
-
-        public LLVMValueRef GetLlvmRef() => Node.GetLlvmRef();
     }
 }
