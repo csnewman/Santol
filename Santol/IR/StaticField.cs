@@ -1,4 +1,8 @@
-﻿namespace Santol.IR
+﻿using System;
+using LLVMSharp;
+using Santol.Generator;
+
+namespace Santol.IR
 {
     public class StaticField : IField
     {
@@ -14,6 +18,11 @@
             Name = name;
             MangledName = $"{parent.MangledName}_SF_{type.MangledName}_{name}";
             Type = type;
+        }
+
+        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
         }
     }
 }

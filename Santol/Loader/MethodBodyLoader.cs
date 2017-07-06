@@ -397,7 +397,8 @@ namespace Santol.Loader
                         break;
                     }
                     case Code.Ldsfld:
-                        PushNode(new LoadStatic(_codeGenerator, (FieldReference) instruction.Operand));
+                        PushNode(new LoadStatic(
+                            (StaticField) _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
                         break;
                     case Code.Ldfld:
                         PushNode(new LoadField(_codeGenerator, PopNode(), (FieldReference) instruction.Operand));

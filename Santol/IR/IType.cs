@@ -1,4 +1,5 @@
 ﻿using LLVMSharp;
+using Mono.Cecil;
 using Santol.Generator;
 
 namespace Santol.IR
@@ -15,6 +16,7 @@ namespace Santol.IR
         LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value);
 
         LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value);
-        
+
+        IField ResolveField(FieldReference field);
     }
 }

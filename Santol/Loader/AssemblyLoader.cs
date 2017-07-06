@@ -159,12 +159,17 @@ namespace Santol.Loader
                             !method.IsVirtual && !method.IsAbstract, ResolveType(method.ReturnType), args,
                             method.Body));
                     }
-                    
+
                     return type;
                 }
                 default:
                     throw new NotImplementedException("Type not implemented! " + definition);
             }
+        }
+
+        public IField ResolveField(FieldReference field)
+        {
+            return ResolveType(field.DeclaringType).ResolveField(field);
         }
     }
 }
