@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
@@ -12,17 +7,17 @@ namespace Santol.Nodes
     {
         public int Slot { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType { get; }
+        public override IType ResultType { get; }
 
-        public IncomingValue(Compiler compiler, TypeReference type, int slot) : base(compiler)
+        public IncomingValue(IType type, int slot)
         {
             ResultType = type;
             Slot = slot;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.CurrentPhis[Slot]);
+            SetRef(fgen.CurrentPhis[Slot]);
         }
 
         public override string ToFullString() => $"IncomingValue [Slot: {Slot}, Result: {ResultType}]";
