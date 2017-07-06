@@ -43,17 +43,17 @@ namespace Santol.Loader
             switch (definition.MetadataType)
             {
                 case MetadataType.Void:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Void;
                 case MetadataType.Boolean:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Boolean;
                 case MetadataType.Char:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Char;
                 case MetadataType.SByte:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.SByte;
                 case MetadataType.Byte:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Byte;
                 case MetadataType.Int16:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Int16;
                 case MetadataType.UInt16:
                     return PrimitiveType.UInt16;
                 case MetadataType.Int32:
@@ -61,17 +61,17 @@ namespace Santol.Loader
                 case MetadataType.UInt32:
                     return PrimitiveType.UInt32;
                 case MetadataType.Int64:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Int64;
                 case MetadataType.UInt64:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.UInt64;
                 case MetadataType.Single:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Single;
                 case MetadataType.Double:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.Double;
                 case MetadataType.IntPtr:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.IntPtr;
                 case MetadataType.UIntPtr:
-                    throw new NotImplementedException("Type not implemented! " + definition);
+                    return PrimitiveType.UIntPtr;
                 case MetadataType.Pointer:
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.String:
