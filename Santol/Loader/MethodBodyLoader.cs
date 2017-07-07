@@ -397,11 +397,11 @@ namespace Santol.Loader
                         break;
                     }
                     case Code.Ldsfld:
-                        PushNode(new LoadStatic(
-                            (StaticField) _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
+                        PushNode(new LoadStatic(_assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
                         break;
                     case Code.Ldfld:
-                        PushNode(new LoadField(_codeGenerator, PopNode(), (FieldReference) instruction.Operand));
+                        PushNode(new LoadField(PopNode(),
+                            _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
                         break;
 
                     default:

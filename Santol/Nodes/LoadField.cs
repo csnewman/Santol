@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 using Santol.Loader;
 
 namespace Santol.Nodes
@@ -13,17 +14,17 @@ namespace Santol.Nodes
     public class LoadField : Node
     {
         public NodeReference Object { get; }
-        public FieldReference Field { get; }
+        public IField Field { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType => Field.FieldType;
+        public override IType ResultType => Field.Type;
 
-        public LoadField(Compiler compiler, NodeReference @object, FieldReference field) : base(compiler)
+        public LoadField(NodeReference @object, IField field)
         {
             Object = @object;
             Field = field;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
             TypeReference objType = Object.ResultType;
 
