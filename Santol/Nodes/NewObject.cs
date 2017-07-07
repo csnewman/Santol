@@ -54,7 +54,7 @@ namespace Santol.Nodes
 
 //            LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
 //            for (int i = 0; i < args.Length; i++)
-//                args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetLlvmRef(
+//                args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetRef(
 //                    Constructor.Parameters[args.Length - 1 - i].ParameterType);
 //
 //            LLVMValueRef? val = fgen.GenerateCall(Constructor, args);

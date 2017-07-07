@@ -19,6 +19,6 @@ namespace Santol.IR
 
         IField ResolveField(FieldReference field);
 
-        LLVMValueRef GetStaticFieldAddress(CodeGenerator codeGenerator, IField field);
+        LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field);
     }
 }

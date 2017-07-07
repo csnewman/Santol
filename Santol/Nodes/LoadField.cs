@@ -26,51 +26,7 @@ namespace Santol.Nodes
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            TypeReference objType = Object.ResultType;
-
-            Console.WriteLine("reference " + Object.ResultType);
-            Console.WriteLine(" Element type " + Object.ResultType.GetElementType());
-            Console.WriteLine("  MetadataType " + Object.ResultType.MetadataType);
-            Console.WriteLine("  DeclaringType " + Object.ResultType.DeclaringType);
-            Console.WriteLine("  FullName " + Object.ResultType.FullName);
-            Console.WriteLine("  Name " + Object.ResultType.Name);
-            Console.WriteLine("  MetadataToken " + Object.ResultType.MetadataToken);
-
-            LLVMValueRef address;
-            switch (objType.MetadataType)
-            {
-                case MetadataType.Pointer:
-                    address = Object.GetLlvmRef();
-                    objType = objType.GetElementType();
-                    break;
-                case MetadataType.Class:
-                    address = Object.GetLlvmRef();
-                    break;
-                default:
-                    Console.WriteLine(ToFullString());
-                    Console.WriteLine(LLVM.TypeOf(Object.GetLlvmRef()));
-                    throw new NotImplementedException("Unable to get field on type " + objType);
-            }
-
-            switch (objType.MetadataType)
-            {
-                case MetadataType.ValueType:
-                    LoadedType def = CodeGenerator.Resolve(objType);
-                    if (def.IsEnum)
-                        throw new NotSupportedException("Fields should not be accessed on enum!");
-
-                    SetLlvmRef(fgen.LoadDirect(fgen.GetStructElement(address, def.GetIndexOfLocal(Field))));
-                    break;
-                case MetadataType.Class:
-                    Console.WriteLine(LLVM.TypeOf(address) + "  " + ToFullString());
-                    SetLlvmRef(
-                        fgen.LoadDirect(CodeGenerator.GetObjectFormat(objType.Resolve())
-                            .GetFieldAddress(address, Field.Resolve())));
-//                    throw new NotImplementedException();
-                    break;
-                default:
-                    throw new NotImplementedException("Unable to get field on type " + objType);
-            }
+            SetRef(fgen.LoadDirect(Field.Type.GetFieldAddress(codeGenerator, Object.GetRef(), Field)));
         }
 
         public override string ToFullString() => $"LoadField [Object: {Object}, Field: {Field}]";

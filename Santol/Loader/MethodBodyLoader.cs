@@ -397,11 +397,33 @@ namespace Santol.Loader
                         break;
                     }
                     case Code.Ldsfld:
-                        PushNode(new LoadStatic(_assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
+                        PushNode(new LoadStatic(
+                            (StaticField) _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
                         break;
                     case Code.Ldfld:
                         PushNode(new LoadField(PopNode(),
                             _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
+                        break;
+
+                    case Code.Ldind_U1:
+                        PushNode(new LoadDirect(PrimitiveType.Byte, PopNode()));
+                        break;
+
+                    case Code.Stloc:
+                    {
+                        VariableDefinition definition = (VariableDefinition) instruction.Operand;
+                        PushNode(new StoreLocal(_assemblyLoader.ResolveType(definition.VariableType), definition.Index,
+                            PopNode()));
+                        break;
+                    }
+                    case Code.Stsfld:
+                        PushNode(new StoreStatic(
+                            (StaticField) _assemblyLoader.ResolveField((FieldReference) instruction.Operand),
+                            PopNode()));
+                        break;
+                    case Code.Stfld:
+                        PushNode(new StoreField(PopNode(),
+                            _assemblyLoader.ResolveField((FieldReference) instruction.Operand), PopNode()));
                         break;
 
                     default:

@@ -5,27 +5,29 @@ using System.Text;
 using System.Threading.Tasks;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class StoreField : Node
     {
         public NodeReference Object { get; }
-        public FieldReference Field { get; }
+        public IField Field { get; }
+        public NodeReference Value { get; }
         public override bool HasResult => false;
-        public override TypeReference ResultType => null;
+        public override IType ResultType => null;
 
-        public StoreField(Compiler compiler, NodeReference @object, FieldReference field)
-            : base(compiler)
+        public StoreField(NodeReference @object, IField field, NodeReference value)
         {
             Object = @object;
             Field = field;
+            Value = value;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-//            fgen.StoreDirect(Value.GetLlvmRef(Type), Address.GetLlvmRef(Compiler.TypeSystem.UIntPtr));
-            throw new NotImplementedException();
+            fgen.StoreDirect(Value.GetRef(codeGenerator, Field.Type),
+                Object.GetRef(codeGenerator, PrimitiveType.UIntPtr));
         }
 
         public override string ToFullString()

@@ -11,18 +11,18 @@ namespace Santol.Nodes
 {
     public class LoadStatic : Node
     {
-        public IField Field { get; }
+        public StaticField Field { get; }
         public override bool HasResult => true;
         public override IType ResultType => Field.Type;
 
-        public LoadStatic(IField field)
+        public LoadStatic(StaticField field)
         {
             Field = field;
         }
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetRef(fgen.LoadDirect(Field.Type.GetStaticFieldAddress(codeGenerator, Field)));
+            SetRef(fgen.LoadDirect(Field.GetFieldAddress(codeGenerator)));
         }
 
         public override string ToFullString() => $"LoadLocal [Field: {Field}, Type: {ResultType}]";

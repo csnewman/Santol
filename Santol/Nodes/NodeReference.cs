@@ -19,8 +19,8 @@ namespace Santol.Nodes
             Node = node;
         }
 
-        public LLVMValueRef GetLlvmRef(CodeGenerator codeGenerator, IType target) => Node.GetRef(codeGenerator, target);
+        public LLVMValueRef GetRef(CodeGenerator codeGenerator, IType target) => Node.GetRef(codeGenerator, target);
 
-        public LLVMValueRef GetLlvmRef() => Node.GetRef();
+        public LLVMValueRef GetRef() => Node.GetRef();
     }
 }

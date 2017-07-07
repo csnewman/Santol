@@ -5,28 +5,28 @@ using System.Text;
 using System.Threading.Tasks;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class StoreStatic : Node
     {
         public NodeReference Value { get; }
-        public FieldReference Destination { get; }
+        public StaticField Field { get; }
         public override bool HasResult => false;
-        public override TypeReference ResultType => null;
+        public override IType ResultType => null;
 
-        public StoreStatic(Compiler compiler, FieldReference destination, NodeReference value) : base(compiler)
+        public StoreStatic(StaticField field, NodeReference value)
         {
-            Destination = destination;
+            Field = field;
             Value = value;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            fgen.StoreDirect(Value.GetLlvmRef(Destination.FieldType),
-                CodeGenerator.GetGlobal(Destination.GetName(), CodeGenerator.ConvertType(Destination.FieldType)));
+            fgen.StoreDirect(Value.GetRef(codeGenerator, Field.Type), Field.GetFieldAddress(codeGenerator));
         }
 
-        public override string ToFullString() => $"StoreStatic [Value: {Value}, Destination: {Destination}]";
+        public override string ToFullString() => $"StoreStatic [Value: {Value}, Field: {Field}]";
     }
 }

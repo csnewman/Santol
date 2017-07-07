@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
@@ -12,17 +13,17 @@ namespace Santol.Nodes
     {
         public NodeReference Address { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType { get; }
+        public override IType ResultType { get; }
 
-        public LoadDirect(Compiler compiler, TypeReference type, NodeReference address) : base(compiler)
+        public LoadDirect(IType type, NodeReference address)
         {
             ResultType = type;
             Address = address;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(fgen.LoadDirect(Address.GetLlvmRef(Compiler.TypeSystem.UIntPtr)));
+            SetRef(fgen.LoadDirect(Address.GetRef(codeGenerator, PrimitiveType.UIntPtr)));
         }
 
         public override string ToFullString() => $"LoadDirect [Address: {Address}, Type: {ResultType}]";

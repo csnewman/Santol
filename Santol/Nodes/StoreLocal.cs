@@ -2,6 +2,7 @@ using System;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Santol.Generator;
+using Santol.IR;
 using Santol.Nodes;
 
 namespace Santol.Nodes
@@ -9,21 +10,23 @@ namespace Santol.Nodes
     public class StoreLocal : Node
     {
         public NodeReference Value { get; }
-        public VariableDefinition Destination { get; }
+        public IType FieldType { get; }
+        public int FieldIndex { get; }
         public override bool HasResult => false;
-        public override TypeReference ResultType => null;
+        public override IType ResultType => null;
 
-        public StoreLocal(Compiler compiler, VariableDefinition destination, NodeReference value) : base(compiler)
+        public StoreLocal(IType type, int index, NodeReference value)
         {
-            Destination = destination;
+            FieldType = type;
+            FieldIndex = index;
             Value = value;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            fgen.StoreLocal(Destination.Index, Value.GetLlvmRef(Destination.VariableType));
+            fgen.StoreLocal(FieldIndex, Value.GetRef(codeGenerator, FieldType));
         }
 
-        public override string ToFullString() => $"StoreLocal [Value: {Value}, Destination: {Destination}]";
+        public override string ToFullString() => $"StoreLocal [Value: {Value}, Index: {FieldIndex}, Type: {FieldType}]";
     }
 }

@@ -26,7 +26,7 @@ namespace Santol.Nodes
             Console.WriteLine("WE " + ToFullString());
             foreach (NodeReference nodeReference in Arguments)
             {
-                Console.WriteLine(nodeReference.ResultType + "   " + LLVM.TypeOf(nodeReference.GetLlvmRef()));
+                Console.WriteLine(nodeReference.ResultType + "   " + LLVM.TypeOf(nodeReference.GetRef()));
             }
 
             if (Method.Parameters.Count + (Method.ImplicitThis() ? 1 : 0) != Arguments.Length)
