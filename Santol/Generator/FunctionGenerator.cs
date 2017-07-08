@@ -180,35 +180,6 @@ namespace Santol.Generator
             return LLVM.BuildICmp(_codeGenerator.Builder, op, v1, v2, "");
         }
 
-//        public LLVMValueRef? GenerateCall(MethodDefinition method, TypeReference[] argTypes,
-//            LLVMValueRef[] args)
-//        {
-//            if (method.HasThis)
-//                throw new NotImplementedException("Instance methods not supported");
-//
-//            LLVMValueRef func = _cgen.GetFunctionRef(method);
-//
-//            LLVMValueRef[] convArgs = new LLVMValueRef[args.Length];
-//            for (int i = 0; i < args.Length; i++)
-//                convArgs[i] = _cgen.GenerateConversion(argTypes[i], method.Parameters[i].ParameterType, args[i]);
-//
-//            if (method.ReturnType.MetadataType != MetadataType.Void)
-//                return LLVM.BuildCall(_cgen.Builder, func, convArgs, "");
-//
-//            LLVM.BuildCall(_cgen.Builder, func, convArgs, "");
-//            return null;
-//        }
-
-        public LLVMValueRef? GenerateCall(MethodReference method, LLVMValueRef[] args)
-        {
-            LLVMValueRef func = _codeGenerator.GetFunctionRef(method);
-
-            if (method.ReturnType.MetadataType != MetadataType.Void)
-                return LLVM.BuildCall(_codeGenerator.Builder, func, args, "");
-            LLVM.BuildCall(_codeGenerator.Builder, func, args, "");
-            return null;
-        }
-
         public void Return(LLVMValueRef? val)
         {
             if (val.HasValue)

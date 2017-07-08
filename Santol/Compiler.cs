@@ -1,20 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using GraphvizWrapper;
 using LLVMSharp;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using Mono.Cecil.Rocks;
 using Santol.Generator;
 using Santol.IR;
 using Santol.Loader;
-using Santol.Nodes;
-using Santol.Patchers;
 
 namespace Santol
 {
@@ -26,10 +17,7 @@ namespace Santol
         public string TargetPlatform { get; set; }
         public string HostPlatform => Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple());
         public int OptimisationLevel { get; set; }
-
         public CodeGenerator CodeGenerator { get; private set; }
-        public IList<ISegmentPatcher> SegmentPatchers { get; } = new List<ISegmentPatcher>();
-        public IList<IInstructionPatcher> InstructionPatchers { get; } = new List<IInstructionPatcher>();
         
         public void InitLLVM()
         {

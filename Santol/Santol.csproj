@@ -149,7 +149,6 @@
     <Compile Include="Loader\AssemblyLoader.cs" />
     <Compile Include="Loader\MethodBodyLoader.cs" />
     <Compile Include="Loader\RegionMap.cs" />
-    <Compile Include="Loader\CodeSegment.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Generator\CodeGenerator.cs" />
     <Compile Include="Generator\FunctionGenerator.cs" />
