@@ -38,8 +38,8 @@ namespace Santol
             CodeGenerator = new CodeGenerator(TargetPlatform, OptimisationLevel,
                 "Module_" + Path.GetFileNameWithoutExtension(dest));
 
-//            foreach (LoadedType loadedType in _loadedTypes.Values)
-//                GenerateType(loadedType);
+            foreach (IType type in types)
+                type.Generate(CodeGenerator);
 
             // Ouput module
             CodeGenerator.DumpModuleToFile(dest + ".preopt.ll");

@@ -20,9 +20,17 @@ namespace Santol.IR
             Type = type;
         }
 
+        public void Generate(CodeGenerator codeGenerator)
+        {
+            LLVMTypeRef type = Type.GetType(codeGenerator);
+            LLVMValueRef val = codeGenerator.GetGlobal(MangledName, type);
+            LLVM.SetInitializer(val, LLVM.ConstNull(type));
+            LLVM.SetLinkage(val, LLVMLinkage.LLVMExternalLinkage);
+        }
+
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator)
         {
-            throw new NotImplementedException();
+            return codeGenerator.GetGlobal(MangledName, Type.GetType(codeGenerator));
         }
     }
 }

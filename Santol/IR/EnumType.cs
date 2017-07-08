@@ -14,17 +14,17 @@ namespace Santol.IR
         public string Name { get; }
         public string MangledName { get; }
         public IType UnderlyingType { get; }
-        private IList<IField> _fields;
+        private IList<ConstantField> _fields;
 
         public EnumType(string name, IType underlyingType)
         {
             Name = name;
             MangledName = $"E_{name.Replace('.', '_').Replace("*", "PTR")}";
             UnderlyingType = underlyingType;
-            _fields = new List<IField>();
+            _fields = new List<ConstantField>();
         }
 
-        public void AddField(IField constant)
+        public void AddField(ConstantField constant)
         {
             _fields.Add(constant);
         }
@@ -67,6 +67,12 @@ namespace Santol.IR
         public IMethod ResolveMethod(MethodReference method)
         {
             throw new NotSupportedException("Enums can not have methods");
+        }
+
+        public void Generate(CodeGenerator codeGenerator)
+        {
+            foreach (ConstantField constantField in _fields)
+                constantField.Generate(codeGenerator);
         }
     }
 }

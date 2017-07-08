@@ -210,5 +210,10 @@ namespace Santol.IR
         {
             throw new NotImplementedException($"Primitive types have no supported fields, {method.Name}");
         }
+
+        public void Generate(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

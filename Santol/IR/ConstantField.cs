@@ -1,4 +1,7 @@
-﻿namespace Santol.IR
+﻿using LLVMSharp;
+using Santol.Generator;
+
+namespace Santol.IR
 {
     public class ConstantField : IField
     {
@@ -16,6 +19,15 @@
             MangledName = $"{parent.MangledName}_CF_{type.MangledName}_{name}";
             Type = type;
             Value = value;
+        }
+
+        public void Generate(CodeGenerator codeGenerator)
+        {
+            LLVMTypeRef type = Type.GetType(codeGenerator);
+            LLVMValueRef val = codeGenerator.GetGlobal(MangledName, type);
+            LLVM.SetInitializer(val, Type.GenerateConstantValue(codeGenerator, Value));
+            LLVM.SetLinkage(val, LLVMLinkage.LLVMExternalLinkage);
+            LLVM.SetGlobalConstant(val, true);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using LLVMSharp;
 using Santol.IR;
@@ -13,6 +14,7 @@ namespace Santol.Generator
         public LLVMModuleRef Module { get; private set; }
         public LLVMContextRef Context { get; private set; }
         public LLVMBuilderRef Builder { get; private set; }
+        private IDictionary<string, LLVMValueRef> _globals;
 
         public CodeGenerator(string targetPlatform, int optimisation, string moduleName)
         {
@@ -44,6 +46,8 @@ namespace Santol.Generator
                 LLVM.MDString("Debug Info Version", (uint) "Debug Info Version".Length),
                 LLVM.ConstInt(LLVM.Int32Type(), 3, false)
             }));
+
+            _globals = new Dictionary<string, LLVMValueRef>();
         }
 
         public void DumpModuleToFile(string file)
@@ -87,6 +91,16 @@ namespace Santol.Generator
             if (converted.HasValue)
                 return converted.Value;
             throw new NotSupportedException("Unable to convert from " + from + " to " + to);
+        }
+
+        public LLVMValueRef GetGlobal(string name, LLVMTypeRef type)
+        {
+            if (_globals.ContainsKey(name))
+                return _globals[name];
+
+            LLVMValueRef @ref = LLVM.AddGlobal(Module, type, name);
+            _globals[name] = @ref;
+            return @ref;
         }
     }
 }
