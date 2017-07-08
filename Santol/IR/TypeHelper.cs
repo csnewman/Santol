@@ -5,10 +5,10 @@ namespace Santol.IR
 {
     public static class TypeHelper
     {
-        public static TypeReference GetSimplestType(TypeReference t1, TypeReference t2)
+        public static IType GetSimplestType(IType t1, IType t2)
         {
-            if (t1.MetadataType == MetadataType.Boolean && t2.MetadataType == MetadataType.Int32)
-                return t1;
+            if (t1 == PrimitiveType.Boolean && t2 == PrimitiveType.Int32)
+                return PrimitiveType.Boolean;
             throw new NotImplementedException("Proper simplest type finding not implemented");
         }
     }
