@@ -3,6 +3,7 @@ using System.CodeDom;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
@@ -11,16 +12,16 @@ namespace Santol.Nodes
         public bool HasValue => Value != null;
         public NodeReference Value { get; }
         public override bool HasResult => false;
-        public override TypeReference ResultType => null;
+        public override IType ResultType => null;
 
-        public Return(Compiler compiler, NodeReference value) : base(compiler)
+        public Return(NodeReference value) 
         {
             Value = value;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            fgen.Return(HasValue ? (LLVMValueRef?) Value.GetLlvmRef(fgen.Definition.ReturnType) : null);
+            fgen.Return(HasValue ? (LLVMValueRef?) Value.GetRef(codeGenerator, fgen.Definition.ReturnType) : null);
         }
 
         public override string ToFullString() => $"Return [HasValue: {HasValue}, Value: {Value}]";
