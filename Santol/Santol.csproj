@@ -175,11 +175,6 @@
     <Compile Include="Nodes\StoreField.cs" />
     <Compile Include="Nodes\StoreLocal.cs" />
     <Compile Include="Nodes\StoreStatic.cs" />
-    <Compile Include="Objects\ObjectFormat.cs" />
-    <Compile Include="Patchers\IInstructionPatcher.cs" />
-    <Compile Include="Patchers\ISegmentPatcher.cs" />
-    <Compile Include="Patchers\PrimitiveInstructionPatcher.cs" />
-    <Compile Include="Patchers\PrimitiveSegmentPatcher.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

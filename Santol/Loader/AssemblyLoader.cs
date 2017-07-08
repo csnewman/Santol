@@ -35,6 +35,7 @@ namespace Santol.Loader
 
         public IType ResolveType(TypeReference reference)
         {
+            Console.WriteLine(" - Resolving type " + reference.FullName);
             TypeDefinition definition = reference.Resolve();
 
             if (_resolvedTypes.ContainsKey(definition))
@@ -77,13 +78,16 @@ namespace Santol.Loader
                 case MetadataType.String:
                     throw new NotImplementedException("Type not implemented! " + definition);
                 case MetadataType.ValueType:
-                    if (definition.IsEnum)
+                    if (definition.FullName == "System.Void")
+                        return PrimitiveType.Void;
+                    else if (definition.IsEnum)
                     {
                         Console.WriteLine("Loading " + definition.FullName + " (enum)");
                         EnumType type = new EnumType(definition.FullName,
                             ResolveType(definition.GetEnumUnderlyingType()));
                         _resolvedTypes.Add(definition, type);
 
+                        Console.WriteLine(" - Resolving fields");
                         foreach (FieldDefinition field in definition.Fields)
                         {
                             if (field.InitialValue.Length != 0)
@@ -154,7 +158,7 @@ namespace Santol.Loader
 
                     foreach (MethodDefinition method in definition.Methods)
                     {
-                        IType[] args = method.Parameters.Cast<TypeReference>().Select(ResolveType).ToArray();
+                        IType[] args = method.Parameters.Select(p => ResolveType(p.ParameterType)).ToArray();
                         type.AddMethod(new StandardMethod(type, method.Name, method.IsStatic,
                             !method.IsVirtual && !method.IsAbstract, method.HasThis && !method.ExplicitThis,
                             ResolveType(method.ReturnType), args,
