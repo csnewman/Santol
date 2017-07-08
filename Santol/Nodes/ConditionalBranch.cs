@@ -3,44 +3,45 @@ using LLVMSharp;
 using Mono.Cecil;
 using Santol.Loader;
 using Santol.Generator;
+using Santol.IR;
 using Santol.Nodes;
 
 namespace Santol.Nodes
 {
     public class ConditionalBranch : Node
     {
-        public CodeSegment Segment { get; }
-        public CodeSegment ElseSegment { get; }
+        public Block Target { get; }
+        public Block ElseTarget { get; }
         public NodeReference Condition { get; }
         public NodeReference[] Values { get; }
         public override bool HasResult => false;
-        public override TypeReference ResultType => null;
+        public override IType ResultType => null;
 
-        public ConditionalBranch(Compiler compiler, CodeSegment segment, CodeSegment elseSegment,
-            NodeReference condition,
-            NodeReference[] values) : base(compiler)
+        public ConditionalBranch(Block target, Block elseTarget, NodeReference condition, NodeReference[] values)
         {
-            Segment = segment;
-            ElseSegment = elseSegment;
+            Target = target;
+            ElseTarget = elseTarget;
             Condition = condition;
             Values = values;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            LLVMValueRef condValueRef = Condition.GetLlvmRef(Compiler.TypeSystem.Boolean);
+            LLVMValueRef condValueRef = Condition.GetRef(codeGenerator, PrimitiveType.Boolean);
+
+            // TODO: Validate blocks have the same incomings
 
             LLVMValueRef[] vals = new LLVMValueRef[Values.Length];
-            if (Segment.HasIncoming)
+            if (Target.HasIncoming)
             {
-                TypeReference[] targetTypes = Segment.Incoming;
+                IType[] targetTypes = Target.IncomingTypes;
                 for (int i = 0; i < Values.Length; i++)
-                    vals[Values.Length - 1 - i] = Values[i].GetLlvmRef(targetTypes[i]);
+                    vals[Values.Length - 1 - i] = Values[i].GetRef(codeGenerator, targetTypes[i]);
             }
-            fgen.BranchConditional(condValueRef, Segment, ElseSegment, vals);
+            fgen.BranchConditional(condValueRef, Target, ElseTarget, vals);
         }
 
         public override string ToFullString()
-            => $"ConditionalBranch [Condition: {Condition}, Target: {Segment.Name}, Else {ElseSegment.Name}]";
+            => $"ConditionalBranch [Condition: {Condition}, Target: {Target.Name}, Else {ElseTarget.Name}]";
     }
 }

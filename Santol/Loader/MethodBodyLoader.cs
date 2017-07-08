@@ -14,6 +14,7 @@ namespace Santol.Loader
     {
         private AssemblyLoader _assemblyLoader;
         private CodeGenerator _codeGenerator;
+        private IMethod _method;
         private MethodBody _body;
         private ILProcessor _processor;
         private RegionMap _regionMap;
@@ -331,6 +332,11 @@ namespace Santol.Loader
             }
         }
 
+        private Block GetBlock(Instruction instruction)
+        {
+            return _blockMap[instruction];
+        }
+
         private void ParseBlocks(IList<Block> parsedBlocks)
         {
             int parsed = 0;
@@ -347,6 +353,21 @@ namespace Santol.Loader
                 ParseBlocks(parsedBlocks);
             else if (parsedBlocks.Count != _blocks.Count)
                 throw new ArgumentException($"Failed to parse all blocks, parsed {parsedBlocks.Count}/{_blocks.Count}");
+        }
+
+        private Tuple<IType[], NodeReference[]> CollapseStack()
+        {
+            Node[] nodes = _nodeStack.ToArray();
+            IType[] types = new IType[nodes.Length];
+            NodeReference[] references = new NodeReference[nodes.Length];
+            for (int i = 0; i < nodes.Length; i++)
+            {
+                Node node = nodes[i];
+                types[i] = node.ResultType;
+                references[i] = node.TakeReference();
+            }
+            _nodeStack.Clear();
+            return new Tuple<IType[], NodeReference[]>(types, references);
         }
 
         private void ParseBlock(Block block)
@@ -570,6 +591,70 @@ namespace Santol.Loader
                         break;
                     }
 
+                    case Code.Br:
+                    {
+                        Block target = GetBlock((Instruction) instruction.Operand);
+
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        PushNode(new Branch(target, stack.Item2));
+                        return;
+                    }
+                    case Code.Brtrue:
+                    {
+                        NodeReference cond = PopNode();
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Brfalse:
+                    {
+                        NodeReference cond = PopNode();
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        //TODO: Check whether this is valid in all cases
+                        PushNode(new ConditionalBranch(elseTarget, target, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Blt:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.LessThan, v1, v2));
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Bge:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.GreaterThanOrEqual, v1, v2));
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Ret:
+                        PushNode(new Return(_method.ReturnType != PrimitiveType.Void ? PopNode() : null));
+                        return;
+
                     default:
                     {
                         Node[] stack = _nodeStack.ToArray();
@@ -583,9 +668,15 @@ namespace Santol.Loader
 
         private void PushNode(Node node)
         {
+            if(node.HasResult)
+                _nodeStack.Push(node);
+        }
+
+        private NodeReference AddNode(Node node)
+        {
             if (!node.HasResult)
-                throw new ArgumentException("Nodes without results can not be pushed on the stack");
-            _nodeStack.Push(node);
+                throw new ArgumentException("Nodes without results cannot use add");
+            return node.TakeReference();
         }
 
         private NodeReference PopNode()
