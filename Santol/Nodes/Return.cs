@@ -21,7 +21,7 @@ namespace Santol.Nodes
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            fgen.Return(HasValue ? (LLVMValueRef?) Value.GetRef(codeGenerator, fgen.Definition.ReturnType) : null);
+            fgen.Return(HasValue ? (LLVMValueRef?) Value.GetRef(codeGenerator, fgen.Method.ReturnType) : null);
         }
 
         public override string ToFullString() => $"Return [HasValue: {HasValue}, Value: {Value}]";
