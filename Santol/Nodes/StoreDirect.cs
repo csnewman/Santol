@@ -1,28 +1,28 @@
 using System;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class StoreDirect : Node
     {
-        public TypeReference Type { get; }
+        public IType Type { get; }
         public NodeReference Value { get; }
         public NodeReference Address { get; }
         public override bool HasResult => false;
-        public override TypeReference ResultType => null;
+        public override IType ResultType => null;
 
-        public StoreDirect(Compiler compiler, TypeReference type, NodeReference value, NodeReference address)
-            : base(compiler)
+        public StoreDirect(IType type, NodeReference value, NodeReference address)
         {
             Type = type;
             Value = value;
             Address = address;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            fgen.StoreDirect(Value.GetLlvmRef(Type), Address.GetLlvmRef(Compiler.TypeSystem.UIntPtr));
+            fgen.StoreDirect(Value.GetRef(codeGenerator, Type), Address.GetRef(codeGenerator, PrimitiveType.UIntPtr));
         }
 
         public override string ToFullString()

@@ -426,6 +426,119 @@ namespace Santol.Loader
                             _assemblyLoader.ResolveField((FieldReference) instruction.Operand), PopNode()));
                         break;
 
+                    case Code.Stind_I1:
+                        PushNode(new StoreDirect(PrimitiveType.Byte, PopNode(), PopNode()));
+                        break;
+
+                    case Code.Conv_I:
+                        PushNode(new Nodes.Convert(PrimitiveType.IntPtr, PopNode()));
+                        break;
+                    case Code.Conv_I8:
+                        PushNode(new Nodes.Convert(PrimitiveType.Int64, PopNode()));
+                        break;
+                    case Code.Conv_U:
+                        PushNode(new Nodes.Convert(PrimitiveType.UIntPtr, PopNode()));
+                        break;
+                    case Code.Conv_U1:
+                        PushNode(new Nodes.Convert(PrimitiveType.Byte, PopNode()));
+                        break;
+                    case Code.Conv_U2:
+                        PushNode(new Nodes.Convert(PrimitiveType.UInt16, PopNode()));
+                        break;
+
+                    case Code.Add:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not add two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.Add, lhs, rhs));
+                        break;
+                    }
+                    case Code.Sub:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not subtract two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.Subtract, lhs, rhs));
+                        break;
+                    }
+                    case Code.Mul:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not multiply two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.Multiply, lhs, rhs));
+                        break;
+                    }
+                    case Code.Div:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not divide two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.Divide, lhs, rhs));
+                        break;
+                    }
+                    case Code.Rem:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not find remainder of two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.Remainder, lhs, rhs));
+                        break;
+                    }
+                    case Code.Shl:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Numeric(Numeric.OperationType.ShiftLeft, lhs, rhs));
+                        break;
+                    }
+                    case Code.Or:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not or two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.Or, lhs, rhs));
+                        break;
+                    }
+                    case Code.Xor:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (lhs.ResultType != rhs.ResultType)
+                            throw new NotSupportedException("Can not xor two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.XOr, lhs, rhs));
+                        break;
+                    }
+
+                    case Code.Clt:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Comparison(Comparison.OperationType.LessThan, lhs, rhs));
+                        break;
+                    }
+                    case Code.Cgt:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Comparison(Comparison.OperationType.GreaterThan, lhs, rhs));
+                        break;
+                    }
+                    case Code.Ceq:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Comparison(Comparison.OperationType.Equal, lhs, rhs));
+                        break;
+                    }
+
                     default:
                     {
                         Node[] stack = _nodeStack.ToArray();

@@ -1,6 +1,7 @@
 using System;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
@@ -8,17 +9,17 @@ namespace Santol.Nodes
     {
         public NodeReference Value { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType { get; }
+        public override IType ResultType { get; }
 
-        public Convert(Compiler compiler, TypeReference type, NodeReference value) : base(compiler)
+        public Convert(IType type, NodeReference value)
         {
             Value = value;
             ResultType = type;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetLlvmRef(Value.GetLlvmRef(ResultType));
+            SetRef(Value.GetRef(codeGenerator, ResultType));
         }
 
         public override string ToFullString() => $"Convert [Value: {Value}, Target: {ResultType}]";
