@@ -6,50 +6,51 @@ using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class NewObject : Node
     {
-        public MethodReference Constructor { get; }
+        public IMethod Constructor { get; }
         public NodeReference[] Arguments { get; }
         public override bool HasResult => true;
-        public override TypeReference ResultType => Constructor.DeclaringType;
+        public override IType ResultType => Constructor.ReturnType;
 
-        public NewObject(Compiler compiler, MethodReference constructor, NodeReference[] arguments) : base(compiler)
+        public NewObject(IMethod constructor, NodeReference[] arguments)
         {
             Constructor = constructor;
             Arguments = arguments;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            TypeDefinition type = ResultType.Resolve();
-
-            if (type.IsValueType)
-            {
-                LLVMTypeRef structType = Compiler.CodeGenerator.GetStructType(type);
-                LLVMValueRef allocated = LLVM.BuildAlloca(Compiler.Builder, structType, "");
-
-                LLVMValueRef[] args =
-                    new LLVMValueRef[Arguments.Length + (Constructor.HasThis && !Constructor.ExplicitThis ? 1 : 0)];
-                for (int i = 0; i < Arguments.Length; i++)
-                    args[args.Length - 1 - i] = Arguments[Arguments.Length - 1 - i].GetLlvmRef(
-                        Constructor.Parameters[Arguments.Length - 1 - i].ParameterType);
-                args[0] = allocated;
-
-                foreach (LLVMValueRef llvmValueRef in args)
-                {
-                    Console.WriteLine(">> " + LLVM.TypeOf(llvmValueRef));
-                }
-
-                fgen.GenerateCall(Constructor, args);
-                SetLlvmRef(fgen.LoadDirect(allocated));
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
+//            TypeDefinition type = ResultType.Resolve();
+//
+//            if (type.IsValueType)
+//            {
+//                LLVMTypeRef structType = Compiler.CodeGenerator.GetStructType(type);
+//                LLVMValueRef allocated = LLVM.BuildAlloca(Compiler.Builder, structType, "");
+//
+//                LLVMValueRef[] args =
+//                    new LLVMValueRef[Arguments.Length + (Constructor.HasThis && !Constructor.ExplicitThis ? 1 : 0)];
+//                for (int i = 0; i < Arguments.Length; i++)
+//                    args[args.Length - 1 - i] = Arguments[Arguments.Length - 1 - i].GetLlvmRef(
+//                        Constructor.Parameters[Arguments.Length - 1 - i].ParameterType);
+//                args[0] = allocated;
+//
+//                foreach (LLVMValueRef llvmValueRef in args)
+//                {
+//                    Console.WriteLine(">> " + LLVM.TypeOf(llvmValueRef));
+//                }
+//
+//                fgen.GenerateCall(Constructor, args);
+//                SetLlvmRef(fgen.LoadDirect(allocated));
+//            }
+//            else
+//            {
+            throw new NotImplementedException();
+//            }
 
 
 //            LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
