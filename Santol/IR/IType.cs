@@ -17,8 +17,11 @@ namespace Santol.IR
 
         LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value);
 
+        IType GetMostComplexType(IType other);
+
         IField ResolveField(FieldReference field);
 
         LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field);
+
     }
 }

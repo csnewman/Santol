@@ -53,6 +53,13 @@ namespace Santol.IR
                 [new Tuple<PrimitiveType, PrimitiveType>(IntPtr, UIntPtr)] = ConversionMethod.Bitcast
             };
 
+        private static readonly Dictionary<Tuple<PrimitiveType, PrimitiveType>, PrimitiveType> MostComplex =
+            new Dictionary<Tuple<PrimitiveType, PrimitiveType>, PrimitiveType>
+            {
+                [new Tuple<PrimitiveType, PrimitiveType>(Boolean, Int32)] = Int32,
+                [new Tuple<PrimitiveType, PrimitiveType>(Char, Int32)] = Int32
+            };
+
         public string MangledName => Name;
         public string Name { get; }
 
@@ -170,6 +177,23 @@ namespace Santol.IR
                 }
             }
             return null;
+        }
+
+        public IType GetMostComplexType(IType other)
+        {
+            if (other is PrimitiveType)
+            {
+                PrimitiveType result;
+                if (MostComplex.TryGetValue(new Tuple<PrimitiveType, PrimitiveType>((PrimitiveType) other, this),
+                    out result))
+                    return result;
+                if (MostComplex.TryGetValue(new Tuple<PrimitiveType, PrimitiveType>(this, (PrimitiveType) other),
+                    out result))
+                    return result;
+                throw new NotImplementedException($"Common complex type between {this} and {other} not set yet");
+            }
+            throw new NotSupportedException($"No common complex type between {this} and {other}");
+            
         }
     }
 }
