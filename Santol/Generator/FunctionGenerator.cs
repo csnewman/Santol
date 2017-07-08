@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LLVMSharp;
 using Mono.Cecil;
+using Santol.IR;
 using Santol.Loader;
 
 namespace Santol.Generator
@@ -9,7 +10,7 @@ namespace Santol.Generator
     public class FunctionGenerator
     {
         private readonly CodeGenerator _codeGenerator;
-        public MethodDefinition Definition;
+        public IMethod Method { get; }
         public LLVMValueRef FunctionRef { get; }
         public LLVMValueRef[] Locals { get; set; }
         private readonly IDictionary<string, LLVMBasicBlockRef> _namedBlocks;
@@ -18,13 +19,18 @@ namespace Santol.Generator
         public string CurrentBlock { get; private set; }
         public LLVMValueRef[] CurrentPhis => _blockPhis[CurrentBlock];
 
-        public FunctionGenerator(CodeGenerator codeGenerator, Mono.Cecil.MethodDefinition definition, LLVMValueRef functionRef)
+        public FunctionGenerator(CodeGenerator codeGenerator, IMethod method, LLVMValueRef functionRef)
         {
             _codeGenerator = codeGenerator;
-            Definition = definition;
+            Method = method;
             FunctionRef = functionRef;
             _namedBlocks = new Dictionary<string, LLVMBasicBlockRef>();
             _blockPhis = new Dictionary<string, LLVMValueRef[]>();
+        }
+
+        public void CreateBlock(Block block, LLVMTypeRef[] incomings)
+        {
+            CreateBlock(block.Name, incomings);
         }
 
         public void CreateBlock(string name, LLVMTypeRef[] incomings)
@@ -41,20 +47,15 @@ namespace Santol.Generator
             _blockPhis[name] = phis;
         }
 
-        public void CreateBlock(CodeSegment segment, LLVMTypeRef[] incomings)
-        {
-            CreateBlock(segment.Name, incomings);
-        }
-
         public void SelectBlock(string name)
         {
             LLVM.PositionBuilderAtEnd(_codeGenerator.Builder, _namedBlocks[name]);
             CurrentBlock = name;
         }
 
-        public void SelectBlock(CodeSegment segment)
+        public void SelectBlock(Block block)
         {
-            SelectBlock(segment.Name);
+            SelectBlock(block.Name);
         }
 
         public LLVMValueRef[] GetPhis(string block)
@@ -62,14 +63,19 @@ namespace Santol.Generator
             return _blockPhis[block];
         }
 
-        public LLVMValueRef[] GetPhis(CodeSegment segment)
+        public LLVMValueRef[] GetPhis(Block block)
         {
-            return GetPhis(segment.Name);
+            return GetPhis(block.Name);
         }
 
-        public LLVMValueRef GetParam(int slot)
+        public LLVMValueRef GetArgument(int slot)
         {
             return LLVM.GetParam(FunctionRef, (uint) slot);
+        }
+
+        public void Branch(Block block, LLVMValueRef[] vals)
+        {
+            Branch(block.Name, vals);
         }
 
         public void Branch(string block, LLVMValueRef[] vals)
@@ -82,12 +88,7 @@ namespace Santol.Generator
             for (int i = 0; i < vals.Length; i++)
                 LLVM.AddIncoming(phis[i], new[] {vals[i]}, new[] {blockref}, 1);
         }
-
-        public void Branch(CodeSegment segment, LLVMValueRef[] vals)
-        {
-            Branch(segment.Name, vals);
-        }
-
+        
         public void BranchConditional(LLVMValueRef condition, string block, string elseBlock, LLVMValueRef[] vals)
         {
             LLVM.BuildCondBr(_codeGenerator.Builder, condition, _namedBlocks[block], _namedBlocks[elseBlock]);
@@ -103,10 +104,10 @@ namespace Santol.Generator
             }
         }
 
-        public void BranchConditional(LLVMValueRef condition, CodeSegment segment, CodeSegment elseSegment,
+        public void BranchConditional(LLVMValueRef condition, Block target, Block elseTarget,
             LLVMValueRef[] vals)
         {
-            BranchConditional(condition, segment.Name, elseSegment.Name, vals);
+            BranchConditional(condition, target.Name, elseTarget.Name, vals);
         }
 
         public LLVMValueRef LoadLocal(int index)
@@ -201,7 +202,7 @@ namespace Santol.Generator
         public LLVMValueRef? GenerateCall(MethodReference method, LLVMValueRef[] args)
         {
             LLVMValueRef func = _codeGenerator.GetFunctionRef(method);
-            
+
             if (method.ReturnType.MetadataType != MetadataType.Void)
                 return LLVM.BuildCall(_codeGenerator.Builder, func, args, "");
             LLVM.BuildCall(_codeGenerator.Builder, func, args, "");

@@ -18,7 +18,7 @@ namespace Santol.Nodes
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetRef(fgen.GetParam(Index + (fgen.Definition.HasThis && !fgen.Definition.ExplicitThis ? 1 : 0)));
+            SetRef(fgen.GetArgument(Index + (fgen.Definition.HasThis && !fgen.Definition.ExplicitThis ? 1 : 0)));
         }
 
         public override string ToFullString() => $"LoadArg [Index: {Index}, Type: {ResultType}]";
