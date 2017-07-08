@@ -409,7 +409,7 @@ namespace Santol.Loader
                     case Code.Ldloc:
                     {
                         VariableDefinition definition = (VariableDefinition) instruction.Operand;
-                        PushNode(new LoadLocal(_assemblyLoader.ResolveType(definition.VariableType), definition.Index));
+                        PushNode(new LoadLocal( _assemblyLoader.ResolveType(definition.VariableType), definition.Index));
                         break;
                     }
                     case Code.Ldarg:

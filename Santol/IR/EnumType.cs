@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LLVMSharp;
+using Mono.Cecil;
 using Santol.Generator;
 
 namespace Santol.IR
@@ -46,6 +47,26 @@ namespace Santol.IR
         public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
             return UnderlyingType.ConvertFrom(codeGenerator, type, value);
+        }
+
+        public IType GetMostComplexType(IType other)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IField ResolveField(FieldReference field)
+        {
+            throw new NotSupportedException("Enums can not have fields");
+        }
+
+        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
+        {
+            throw new NotSupportedException("Enums can not have fields");
+        }
+
+        public IMethod ResolveMethod(MethodReference method)
+        {
+            throw new NotSupportedException("Enums can not have methods");
         }
     }
 }

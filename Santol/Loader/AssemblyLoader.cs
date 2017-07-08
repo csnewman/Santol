@@ -156,7 +156,8 @@ namespace Santol.Loader
                     {
                         IType[] args = method.Parameters.Cast<TypeReference>().Select(ResolveType).ToArray();
                         type.AddMethod(new StandardMethod(type, method.Name, method.IsStatic,
-                            !method.IsVirtual && !method.IsAbstract, ResolveType(method.ReturnType), args,
+                            !method.IsVirtual && !method.IsAbstract, method.HasThis && !method.ExplicitThis,
+                            ResolveType(method.ReturnType), args,
                             method.Body));
                     }
 

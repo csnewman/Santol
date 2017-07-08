@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using LLVMSharp;
+using Mono.Cecil;
 using Santol.Generator;
 
 namespace Santol.IR
@@ -22,8 +23,7 @@ namespace Santol.IR
         public static readonly PrimitiveType Double = new PrimitiveType("double");
         public static readonly PrimitiveType IntPtr = new PrimitiveType("intptr");
         public static readonly PrimitiveType UIntPtr = new PrimitiveType("uintptr");
-
-
+        
         private enum ConversionMethod
         {
             Bitcast,
@@ -194,6 +194,21 @@ namespace Santol.IR
             }
             throw new NotSupportedException($"No common complex type between {this} and {other}");
             
+        }
+
+        public IField ResolveField(FieldReference field)
+        {
+            throw new NotImplementedException($"Primitive types have no supported fields, {field.Name}");
+        }
+
+        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
+        {
+            throw new NotImplementedException($"Primitive types have no supported fields, {field.Name}");
+        }
+
+        public IMethod ResolveMethod(MethodReference method)
+        {
+            throw new NotImplementedException($"Primitive types have no supported fields, {method.Name}");
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using LLVMSharp;
+using Mono.Cecil;
 using Santol.Generator;
 
 namespace Santol.IR
@@ -41,6 +42,26 @@ namespace Santol.IR
         }
 
         public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IType GetMostComplexType(IType other)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IField ResolveField(FieldReference field)
+        {
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IMethod ResolveMethod(MethodReference method)
         {
             throw new NotImplementedException();
         }

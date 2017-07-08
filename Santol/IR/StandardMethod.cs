@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using LLVMSharp;
 using Mono.Cecil.Cil;
 
 namespace Santol.IR
@@ -10,11 +11,13 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsStatic { get; }
         public bool IsLocal { get; }
+        public bool ImplicitThis { get; }
         public IType ReturnType { get; }
         public IType[] Arguments { get; }
         private MethodBody _body;
 
-        public StandardMethod(IType parent, string name, bool isStatic, bool isLocal, IType returnType,
+        public StandardMethod(IType parent, string name, bool isStatic, bool isLocal, bool implicitThis,
+            IType returnType,
             IType[] arguments, MethodBody body)
         {
             Parent = parent;
@@ -23,9 +26,15 @@ namespace Santol.IR
                 $"{parent.MangledName}_SM_{returnType.MangledName}_{name}_{string.Join("_", arguments.Select(f => f.MangledName))}";
             IsStatic = isStatic;
             IsLocal = isLocal;
+            ImplicitThis = implicitThis;
             ReturnType = returnType;
             Arguments = arguments;
             _body = body;
+        }
+
+        public LLVMValueRef? GenerateCall(LLVMValueRef[] arguments)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }
