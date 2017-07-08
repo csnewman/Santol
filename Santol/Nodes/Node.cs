@@ -9,6 +9,8 @@ namespace Santol.Nodes
 {
     public abstract class Node
     {
+        public NodeReference PreviousNode { get; set; }
+        public NodeReference NextNode { get; set; }
         private readonly IList<NodeReference> _references;
         private Node _replacement;
         private LLVMValueRef _llvmRef;

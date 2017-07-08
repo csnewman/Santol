@@ -24,6 +24,7 @@ namespace Santol.Loader
         private IList<Block> _blocks;
         private IDictionary<Instruction, Block> _blockMap;
         private IDictionary<Block, IList<Instruction>> _blockInstructions;
+        private Node _firstNode, _lastNode;
         private Stack<Node> _nodeStack;
 
         private void PrintInstructions()
@@ -668,12 +669,25 @@ namespace Santol.Loader
 
         private void PushNode(Node node)
         {
-            if(node.HasResult)
+            if (_firstNode == null)
+                _firstNode = node;
+            _lastNode = node;
+
+            if (node.HasResult)
                 _nodeStack.Push(node);
         }
 
         private NodeReference AddNode(Node node)
         {
+            if (_firstNode == null)
+                _firstNode = node;
+            else
+            {
+                _lastNode.NextNode = node.TakeReference();
+                node.PreviousNode = _lastNode.TakeReference();
+            }
+            _lastNode = node;
+
             if (!node.HasResult)
                 throw new ArgumentException("Nodes without results cannot use add");
             return node.TakeReference();
