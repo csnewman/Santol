@@ -1,4 +1,6 @@
-﻿namespace Santol.IR
+﻿using LLVMSharp;
+
+namespace Santol.IR
 {
     public interface IMethod
     {
@@ -7,7 +9,10 @@
         string MangledName { get; }
         bool IsStatic { get; }
         bool IsLocal { get; }
+        bool ImplicitThis { get; }
         IType ReturnType { get; }
         IType[] Arguments { get; }
+
+        LLVMValueRef? GenerateCall(LLVMValueRef[] arguments);
     }
 }

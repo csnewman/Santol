@@ -539,6 +539,37 @@ namespace Santol.Loader
                         break;
                     }
 
+                    case Code.Call:
+                    {
+                        IMethod method = _assemblyLoader.ResolveMethod((MethodReference) instruction.Operand);
+
+                        int argCount = method.Arguments.Length + (method.ImplicitThis ? 1 : 0);
+                        NodeReference[] args = new NodeReference[argCount];
+
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = PopNode();
+
+                        PushNode(new Call(method, args));
+                        break;
+                    }
+                    case Code.Callvirt:
+                    {
+                        IMethod method = _assemblyLoader.ResolveMethod((MethodReference) instruction.Operand);
+
+                        if (!method.IsLocal)
+                            throw new NotImplementedException("Expected a local method");
+
+                        int argCount = method.Arguments.Length + (method.ImplicitThis ? 1 : 0);
+                        NodeReference[] args = new NodeReference[argCount];
+
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = PopNode();
+
+
+                        PushNode(new CallVirtual(method, PopNode(), args));
+                        break;
+                    }
+
                     default:
                     {
                         Node[] stack = _nodeStack.ToArray();

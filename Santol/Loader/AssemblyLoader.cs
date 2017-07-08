@@ -171,5 +171,10 @@ namespace Santol.Loader
         {
             return ResolveType(field.DeclaringType).ResolveField(field);
         }
+
+        public IMethod ResolveMethod(MethodReference method)
+        {
+            return ResolveType(method.DeclaringType).ResolveMethod(method);
+        }
     }
 }

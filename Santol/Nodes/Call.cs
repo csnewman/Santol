@@ -5,43 +5,44 @@ using System.Linq;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class Call : Node
     {
-        public MethodReference Method { get; }
+        public IMethod Method { get; }
         public NodeReference[] Arguments { get; }
-        public override bool HasResult => Method.ReturnType.MetadataType != MetadataType.Void;
-        public override TypeReference ResultType => Method.ReturnType;
+        public override bool HasResult => Method.ReturnType != PrimitiveType.Void;
+        public override IType ResultType => Method.ReturnType;
 
-        public Call(Compiler compiler, MethodReference method, NodeReference[] arguments) : base(compiler)
+        public Call(IMethod method, NodeReference[] arguments)
         {
             Method = method;
             Arguments = arguments;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            Console.WriteLine("WE " + ToFullString());
+            Console.WriteLine("Generating call " + ToFullString());
             foreach (NodeReference nodeReference in Arguments)
             {
                 Console.WriteLine(nodeReference.ResultType + "   " + LLVM.TypeOf(nodeReference.GetRef()));
             }
 
-            if (Method.Parameters.Count + (Method.ImplicitThis() ? 1 : 0) != Arguments.Length)
+            if (Method.Arguments.Length + (Method.ImplicitThis ? 1 : 0) != Arguments.Length)
                 throw new ArgumentException("Incorrect number of arguments!");
 
             IList<LLVMValueRef> args = new List<LLVMValueRef>();
-            if (Method.ImplicitThis())
-                args.Add(Arguments[0].GetLlvmRef(Method.DeclaringType));
+            if (Method.ImplicitThis)
+                args.Add(Arguments[0].GetRef(codeGenerator, Method.Parent));
 
-            for (int i = 0; i < Method.Parameters.Count; i++)
-                args.Add(Arguments[(Method.ImplicitThis() ? 1 : 0) + i].GetLlvmRef(Method.Parameters[i].ParameterType));
-            
-            LLVMValueRef? val = fgen.GenerateCall(Method, args.ToArray());
+            for (int i = 0; i < Method.Arguments.Length; i++)
+                args.Add(Arguments[(Method.ImplicitThis ? 1 : 0) + i].GetRef(codeGenerator, Method.Arguments[i]));
+
+            LLVMValueRef? val = Method.GenerateCall(args.ToArray());
             if (val.HasValue)
-                SetLlvmRef(val.Value);
+                SetRef(val.Value);
         }
 
         public override string ToFullString()

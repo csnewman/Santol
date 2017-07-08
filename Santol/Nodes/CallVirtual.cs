@@ -6,26 +6,26 @@ using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.IR;
 
 namespace Santol.Nodes
 {
     public class CallVirtual : Node
     {
-        public MethodReference Method { get; }
+        public IMethod Method { get; }
         public NodeReference Instance { get; }
         public NodeReference[] Arguments { get; }
-        public override bool HasResult => Method.ReturnType.MetadataType != MetadataType.Void;
-        public override TypeReference ResultType => Method.ReturnType;
+        public override bool HasResult => Method.ReturnType != PrimitiveType.Void;
+        public override IType ResultType => Method.ReturnType;
 
-        public CallVirtual(Compiler compiler, MethodReference method, NodeReference instance, NodeReference[] arguments)
-            : base(compiler)
+        public CallVirtual(IMethod method, NodeReference instance, NodeReference[] arguments)
         {
             Method = method;
             Instance = instance;
             Arguments = arguments;
         }
 
-        public override void Generate(FunctionGenerator fgen)
+        public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
 //            LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
 //            for (int i = 0; i < args.Length; i++)

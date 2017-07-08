@@ -23,5 +23,6 @@ namespace Santol.IR
 
         LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field);
 
+        IMethod ResolveMethod(MethodReference method);
     }
 }
