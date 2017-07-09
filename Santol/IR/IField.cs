@@ -1,4 +1,6 @@
-﻿namespace Santol.IR
+﻿using Santol.Generator;
+
+namespace Santol.IR
 {
     public interface IField
     {
@@ -7,5 +9,7 @@
         string MangledName { get; }
         IType Type { get; }
         bool IsShared { get; }
+
+        void Generate(CodeGenerator codeGenerator);
     }
 }

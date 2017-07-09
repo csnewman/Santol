@@ -74,10 +74,7 @@ namespace Santol.IR
         public void Generate(CodeGenerator codeGenerator)
         {
             foreach (IField field in _fields)
-                if (field is ConstantField)
-                    ((ConstantField) field).Generate(codeGenerator);
-                else if (field is StaticField)
-                    ((StaticField) field).Generate(codeGenerator);
+                field.Generate(codeGenerator);
 
 
 //            throw new NotImplementedException();

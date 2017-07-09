@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Santol.Generator;
 
 namespace Santol.IR
 {
@@ -20,6 +21,10 @@ namespace Santol.IR
             Name = name;
             MangledName = $"{parent.MangledName}_LF_{type.MangledName}_{name}";
             Type = type;
+        }
+
+        public void Generate(CodeGenerator codeGenerator)
+        {
         }
     }
 }
