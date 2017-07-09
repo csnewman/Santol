@@ -159,7 +159,7 @@ namespace Santol.Loader
                     foreach (MethodDefinition method in definition.Methods)
                     {
                         IType[] args = method.Parameters.Select(p => ResolveType(p.ParameterType)).ToArray();
-                        type.AddMethod(new StandardMethod(type, method.Name, method.IsStatic,
+                        type.AddMethod(method, new StandardMethod(type, method.Name, method.IsStatic,
                             !method.IsVirtual && !method.IsAbstract, method.HasThis && !method.ExplicitThis,
                             ResolveType(method.ReturnType), args,
                             method.Body));

@@ -12,14 +12,14 @@ namespace Santol.IR
         public string Name { get; }
         public string MangledName { get; }
         private IList<IField> _fields;
-        private IList<IMethod> _methods;
+        private IDictionary<MethodReference, IMethod> _methods;
 
         public ClassType(string name)
         {
             Name = name;
             MangledName = $"C_{name.Replace('.', '_').Replace("*", "PTR")}";
             _fields = new List<IField>();
-            _methods = new List<IMethod>();
+            _methods = new Dictionary<MethodReference, IMethod>();
         }
 
         public void AddField(IField field)
@@ -27,9 +27,9 @@ namespace Santol.IR
             _fields.Add(field);
         }
 
-        public void AddMethod(IMethod method)
+        public void AddMethod(MethodReference reference, IMethod method)
         {
-            _methods.Add(method);
+            _methods[reference] = method;
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
@@ -69,7 +69,7 @@ namespace Santol.IR
 
         public IMethod ResolveMethod(MethodReference method)
         {
-            throw new NotImplementedException();
+            return _methods[method];
         }
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
@@ -80,7 +80,7 @@ namespace Santol.IR
                 field.Generate(assemblyLoader, codeGenerator);
             }
 
-            foreach (IMethod method in _methods)
+            foreach (IMethod method in _methods.Values)
             {
                 Console.WriteLine($" - Generating {method.Name}");
                 method.Generate(assemblyLoader, codeGenerator);
