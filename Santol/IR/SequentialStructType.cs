@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -66,10 +67,10 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
-        public void Generate(CodeGenerator codeGenerator)
+        public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             foreach (IField field in _fields)
-                field.Generate(codeGenerator);
+                field.Generate(assemblyLoader, codeGenerator);
             //            throw new NotImplementedException();
         }
     }

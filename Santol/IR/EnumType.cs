@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -69,10 +70,10 @@ namespace Santol.IR
             throw new NotSupportedException("Enums can not have methods");
         }
 
-        public void Generate(CodeGenerator codeGenerator)
+        public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             foreach (ConstantField constantField in _fields)
-                constantField.Generate(codeGenerator);
+                constantField.Generate(assemblyLoader, codeGenerator);
         }
     }
 }

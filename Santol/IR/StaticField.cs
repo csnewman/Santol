@@ -1,6 +1,7 @@
 ﻿using System;
 using LLVMSharp;
 using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -20,7 +21,7 @@ namespace Santol.IR
             Type = type;
         }
 
-        public void Generate(CodeGenerator codeGenerator)
+        public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             LLVMTypeRef type = Type.GetType(codeGenerator);
             LLVMValueRef val = codeGenerator.GetGlobal(MangledName, type);

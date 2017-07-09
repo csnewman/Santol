@@ -1,4 +1,5 @@
 ﻿using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -10,6 +11,6 @@ namespace Santol.IR
         IType Type { get; }
         bool IsShared { get; }
 
-        void Generate(CodeGenerator codeGenerator);
+        void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator);
     }
 }

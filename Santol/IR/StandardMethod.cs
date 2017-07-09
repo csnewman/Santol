@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using LLVMSharp;
 using Mono.Cecil.Cil;
+using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -30,6 +32,13 @@ namespace Santol.IR
             ReturnType = returnType;
             Arguments = arguments;
             _body = body;
+        }
+
+        public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
+        {
+            MethodBodyLoader bodyLoader = new MethodBodyLoader(assemblyLoader, codeGenerator);
+
+            throw new System.NotImplementedException();
         }
 
         public LLVMValueRef? GenerateCall(LLVMValueRef[] arguments)

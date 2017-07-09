@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -23,7 +24,7 @@ namespace Santol.IR
             Type = type;
         }
 
-        public void Generate(CodeGenerator codeGenerator)
+        public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
         }
     }

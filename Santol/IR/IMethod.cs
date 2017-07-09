@@ -1,4 +1,6 @@
 ﻿using LLVMSharp;
+using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -12,6 +14,8 @@ namespace Santol.IR
         bool ImplicitThis { get; }
         IType ReturnType { get; }
         IType[] Arguments { get; }
+
+        void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator);
 
         LLVMValueRef? GenerateCall(LLVMValueRef[] arguments);
     }

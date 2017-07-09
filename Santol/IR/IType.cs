@@ -1,6 +1,7 @@
 ﻿using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
+using Santol.Loader;
 
 namespace Santol.IR
 {
@@ -25,6 +26,6 @@ namespace Santol.IR
 
         IMethod ResolveMethod(MethodReference method);
 
-        void Generate(CodeGenerator codeGenerator);
+        void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator);
     }
 }

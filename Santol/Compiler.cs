@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using GraphvizWrapper;
@@ -17,8 +18,7 @@ namespace Santol
         public string TargetPlatform { get; set; }
         public string HostPlatform => Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple());
         public int OptimisationLevel { get; set; }
-        public CodeGenerator CodeGenerator { get; private set; }
-        
+
         public void InitLLVM()
         {
             LLVM.InitializeAllTargetInfos();
@@ -35,17 +35,20 @@ namespace Santol
             IList<IType> types = loader.Load(source);
 
             // Generate types
-            CodeGenerator = new CodeGenerator(TargetPlatform, OptimisationLevel,
+            CodeGenerator codeGenerator = new CodeGenerator(TargetPlatform, OptimisationLevel,
                 "Module_" + Path.GetFileNameWithoutExtension(dest));
 
             foreach (IType type in types)
-                type.Generate(CodeGenerator);
+            {
+                Console.WriteLine($"Generating {type.Name}");
+                type.Generate(loader, codeGenerator);
+            }
 
             // Ouput module
-            CodeGenerator.DumpModuleToFile(dest + ".preopt.ll");
-            CodeGenerator.OptimiseModule();
-            CodeGenerator.DumpModuleToFile(dest + ".ll");
-            CodeGenerator.CompileModule(dest);
+            codeGenerator.DumpModuleToFile(dest + ".preopt.ll");
+            codeGenerator.OptimiseModule();
+            codeGenerator.DumpModuleToFile(dest + ".ll");
+            codeGenerator.CompileModule(dest);
         }
     }
 }

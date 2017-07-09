@@ -27,6 +27,12 @@ namespace Santol.Loader
         private Node _firstNode, _lastNode;
         private Stack<Node> _nodeStack;
 
+        public MethodBodyLoader(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
+        {
+            _assemblyLoader = assemblyLoader;
+            _codeGenerator = codeGenerator;
+        }
+
         private void PrintInstructions()
         {
             //Find all jump destinations
@@ -47,19 +53,20 @@ namespace Santol.Loader
             }
         }
 
-        public void PrintRegions()
+        private void PrintRegions()
         {
             Console.WriteLine("  Regions:");
             _regionMap.PrintTree("    ");
         }
 
-        public void LoadBody(MethodBody body)
+        public void LoadBody(IMethod method, MethodBody body)
         {
+            _method = method;
             _body = body;
-            _processor = body.GetILProcessor();
+            _processor = _body.GetILProcessor();
 
             // Seperate instructions into blocks
-            body.SimplifyMacros();
+            _body.SimplifyMacros();
             FixFallthroughs();
             FixMidBranches();
             DetectNoIncomings();
