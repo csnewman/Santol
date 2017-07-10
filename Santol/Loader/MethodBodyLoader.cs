@@ -391,13 +391,14 @@ namespace Santol.Loader
         private void ParseBlock(Block block)
         {
             _nodeStack = new Stack<Node>();
+            _firstNode = null;
+            _lastNode = null;
 
             if (!block.ForcedNoIncomings)
             {
                 IType[] incoming = block.IncomingTypes;
                 if (incoming == null)
                     throw new ArgumentException("Incoming types are yet to be resolved");
-
                 for (int i = 0; i < incoming.Length; i++)
                     PushNode(new IncomingValue(incoming[i], i));
             }
