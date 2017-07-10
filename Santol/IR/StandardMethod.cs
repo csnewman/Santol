@@ -82,7 +82,13 @@ namespace Santol.IR
 
         public LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments)
         {
-            throw new System.NotImplementedException();
+            LLVMTypeRef type = GetMethodType(codeGenerator);
+            LLVMValueRef function = codeGenerator.GetFunction(MangledName, type);
+
+            if (ReturnType != PrimitiveType.Void)
+                return LLVM.BuildCall(codeGenerator.Builder, function, arguments, "");
+            LLVM.BuildCall(codeGenerator.Builder, function, arguments, "");
+            return null;
         }
     }
 }
