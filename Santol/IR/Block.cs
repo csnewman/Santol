@@ -46,13 +46,13 @@ namespace Santol.IR
                 }
         }
 
-        public void Generate(CodeGenerator codeGenerator)
+        public void Generate(CodeGenerator codeGenerator, FunctionGenerator functionGenerator)
         {
             Node node = FirstNode;
 
             while (node != null)
             {
-                node.Generate(codeGenerator);
+                node.Generate(codeGenerator, functionGenerator);
                 node = node.NextNode?.Node;
             }
         }

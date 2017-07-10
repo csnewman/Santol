@@ -39,12 +39,12 @@ namespace Santol.IR
             Blocks.Add(block);
         }
 
-        public void Generate(CodeGenerator codeGenerator)
+        public void Generate(CodeGenerator codeGenerator, FunctionGenerator functionGenerator)
         {
             if(ChildZones.Count != 0)
                 throw new NotImplementedException("Child zones not added yet");
             foreach (Block block in Blocks)
-                block.Generate(codeGenerator);
+                block.Generate(codeGenerator, functionGenerator);
         }
     }
 }
