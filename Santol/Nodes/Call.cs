@@ -30,15 +30,13 @@ namespace Santol.Nodes
                 Console.WriteLine(nodeReference.ResultType + "   " + LLVM.TypeOf(nodeReference.GetRef()));
             }
 
-            if (Method.Arguments.Length + (Method.ImplicitThis ? 1 : 0) != Arguments.Length)
+            if (Method.Arguments.Length != Arguments.Length)
                 throw new ArgumentException("Incorrect number of arguments!");
 
-            IList<LLVMValueRef> args = new List<LLVMValueRef>();
-            if (Method.ImplicitThis)
-                args.Add(Arguments[0].GetRef(codeGenerator, Method.Parent));
+            LLVMValueRef[] args = new LLVMValueRef[Method.Arguments.Length];
 
             for (int i = 0; i < Method.Arguments.Length; i++)
-                args.Add(Arguments[(Method.ImplicitThis ? 1 : 0) + i].GetRef(codeGenerator, Method.Arguments[i]));
+                args[i] = Arguments[i].GetRef(codeGenerator, Method.Arguments[i]);
 
             LLVMValueRef? val = Method.GenerateCall(codeGenerator, args.ToArray());
             if (val.HasValue)

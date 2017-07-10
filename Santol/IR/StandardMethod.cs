@@ -13,7 +13,6 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsStatic { get; }
         public bool IsLocal { get; }
-        public bool ImplicitThis { get; }
         public IType ReturnType { get; }
         public IType[] Arguments { get; }
         private MethodBody _body;
@@ -28,10 +27,17 @@ namespace Santol.IR
                 $"{parent.MangledName}_SM_{returnType.MangledName}_{name}_{string.Join("_", arguments.Select(f => f.MangledName))}";
             IsStatic = isStatic;
             IsLocal = isLocal;
-            ImplicitThis = implicitThis;
             ReturnType = returnType;
-            Arguments = arguments;
             _body = body;
+
+            if (implicitThis)
+            {
+                Arguments = new IType[arguments.Length + 1];
+                arguments[0] = parent.GetLocalReferenceType();
+                arguments.CopyTo(Arguments, 1);
+            }
+            else
+                Arguments = arguments;
         }
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)

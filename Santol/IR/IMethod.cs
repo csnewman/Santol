@@ -11,7 +11,6 @@ namespace Santol.IR
         string MangledName { get; }
         bool IsStatic { get; }
         bool IsLocal { get; }
-        bool ImplicitThis { get; }
         IType ReturnType { get; }
         IType[] Arguments { get; }
 
