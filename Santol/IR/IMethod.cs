@@ -17,6 +17,8 @@ namespace Santol.IR
 
         void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator);
 
-        LLVMValueRef? GenerateCall(LLVMValueRef[] arguments);
+        LLVMTypeRef GetMethodType(CodeGenerator codeGenerator);
+
+        LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments);
     }
 }

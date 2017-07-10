@@ -37,11 +37,28 @@ namespace Santol.IR
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             MethodBodyLoader bodyLoader = new MethodBodyLoader(assemblyLoader, codeGenerator);
+            BlockRegion baseRegion = bodyLoader.LoadBody(this, _body);
+
+
+            FunctionGenerator functionGenerator = new FunctionGenerator(codeGenerator, this,);
+            baseRegion.Generate(codeGenerator);
+        }
+
+        public LLVMTypeRef GetMethodType(CodeGenerator codeGenerator)
+        {
+            LLVMTypeRef returnType = ReturnType.GetType(codeGenerator);
+            LLVMTypeRef[] argTypes = new LLVMTypeRef[Arguments.Length + (ImplicitThis ? 1 : 0)];
+
+            for (int i = 0; i < Arguments.Length; i++)
+                argTypes[i + (ImplicitThis ? 1 : 0)] = Arguments[i].GetType(codeGenerator);
+
+            if(IsLocal)
+                argTypes[0] = 
 
             throw new System.NotImplementedException();
         }
 
-        public LLVMValueRef? GenerateCall(LLVMValueRef[] arguments)
+        public LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments)
         {
             throw new System.NotImplementedException();
         }

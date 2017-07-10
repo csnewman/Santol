@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
+using Santol.Generator;
 using Santol.Nodes;
 
 namespace Santol.IR
@@ -14,6 +15,7 @@ namespace Santol.IR
         public IType[] IncomingTypes { get; private set; }
         public bool HasIncoming => !ForcedNoIncomings && IncomingTypes != null && IncomingTypes.Length > 0;
         public IList<Block> CallingBlocks { get; }
+        public Node FirstNode { get; set; }
 
         public Block(string name, BlockRegion region)
         {
@@ -21,7 +23,7 @@ namespace Santol.IR
             Region = region;
             CallingBlocks = new List<Block>();
         }
-        
+
         public void AddCaller(Block block, IType[] incomingTypes)
         {
             CallingBlocks.Add(block);
@@ -42,6 +44,17 @@ namespace Santol.IR
                         $"WARNING: Having to get simplest type between {IncomingTypes[i]} and {incomingTypes[i]}, untested legacy functionality being used!");
                     IncomingTypes[i] = TypeHelper.GetSimplestType(IncomingTypes[i], incomingTypes[i]);
                 }
+        }
+
+        public void Generate(CodeGenerator codeGenerator)
+        {
+            Node node = FirstNode;
+
+            while (node != null)
+            {
+                node.Generate(codeGenerator);
+                node = node.NextNode?.Node;
+            }
         }
     }
 }

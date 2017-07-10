@@ -40,7 +40,7 @@ namespace Santol.Nodes
             for (int i = 0; i < Method.Arguments.Length; i++)
                 args.Add(Arguments[(Method.ImplicitThis ? 1 : 0) + i].GetRef(codeGenerator, Method.Arguments[i]));
 
-            LLVMValueRef? val = Method.GenerateCall(args.ToArray());
+            LLVMValueRef? val = Method.GenerateCall(codeGenerator, args.ToArray());
             if (val.HasValue)
                 SetRef(val.Value);
         }

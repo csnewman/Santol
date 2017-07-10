@@ -59,7 +59,7 @@ namespace Santol.Loader
             _regionMap.PrintTree("    ");
         }
 
-        public void LoadBody(IMethod method, MethodBody body)
+        public BlockRegion LoadBody(IMethod method, MethodBody body)
         {
             _method = method;
             _body = body;
@@ -80,6 +80,8 @@ namespace Santol.Loader
             // Creates blocks
             GenerateBlocks();
             ParseBlocks(new List<Block>());
+
+            return _baseRegion;
         }
 
         private IList<Instruction> GetJumpDestinations()
@@ -214,6 +216,7 @@ namespace Santol.Loader
 
         public void DetectNoIncomings()
         {
+            _noIncomings = new List<Instruction>();
             IList<Instruction> jumpDestinations = new List<Instruction>();
             foreach (Instruction instruction in _body.Instructions)
             {
@@ -221,6 +224,8 @@ namespace Santol.Loader
                 OpCode code = instruction.OpCode;
                 if (code.Code == Code.Leave)
                     _noIncomings.AddOpt((Instruction) instruction.Operand);
+                else if (instruction.Previous == null)
+                    _noIncomings.AddOpt(instruction);
                 else if (code.FlowControl == FlowControl.Branch || code.FlowControl == FlowControl.Cond_Branch)
                     switch (code.OperandType)
                     {
@@ -235,8 +240,7 @@ namespace Santol.Loader
                             throw new NotImplementedException("Unknown branch instruction " + instruction + "  " +
                                                               instruction.Operand.GetType());
                     }
-                else if (instruction.Previous != null &&
-                         instruction.Previous.OpCode.FlowControl == FlowControl.Branch &&
+                else if (instruction.Previous.OpCode.FlowControl == FlowControl.Branch &&
                          !jumpDestinations.Contains(instruction))
                     _noIncomings.AddOpt(instruction);
             }
@@ -274,6 +278,7 @@ namespace Santol.Loader
             {
                 if (childRegion.Type != RegionMap.RegionType.Try) continue;
                 Zone newZone = new Zone(region);
+                region.AddChildZone(newZone);
                 newZone.TryRegion = new BlockRegion(BlockRegion.RegionType.Primary, newZone);
                 GenerateRegion(newZone.TryRegion, childRegion);
 
@@ -381,7 +386,6 @@ namespace Santol.Loader
         private void ParseBlock(Block block)
         {
             _nodeStack = new Stack<Node>();
-            IList<Instruction> instructions = _blockInstructions[block];
 
             if (!block.ForcedNoIncomings)
             {
@@ -393,6 +397,12 @@ namespace Santol.Loader
                     PushNode(new IncomingValue(incoming[i], i));
             }
 
+            ParseInstructions(block, _blockInstructions[block]);
+            block.FirstNode = _firstNode;
+        }
+
+        private void ParseInstructions(Block block, IList<Instruction> instructions)
+        {
             foreach (Instruction instruction in instructions)
             {
                 switch (instruction.OpCode.Code)
@@ -416,7 +426,7 @@ namespace Santol.Loader
                     case Code.Ldloc:
                     {
                         VariableDefinition definition = (VariableDefinition) instruction.Operand;
-                        PushNode(new LoadLocal( _assemblyLoader.ResolveType(definition.VariableType), definition.Index));
+                        PushNode(new LoadLocal(_assemblyLoader.ResolveType(definition.VariableType), definition.Index));
                         break;
                     }
                     case Code.Ldarg:
@@ -672,12 +682,18 @@ namespace Santol.Loader
                     }
                 }
             }
+            throw new ArgumentException("Invalid set on instructions, with no ending branch");
         }
 
         private void PushNode(Node node)
         {
             if (_firstNode == null)
                 _firstNode = node;
+            else
+            {
+                _lastNode.NextNode = node.TakeReference();
+                node.PreviousNode = _lastNode.TakeReference();
+            }
             _lastNode = node;
 
             if (node.HasResult)

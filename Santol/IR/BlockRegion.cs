@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Santol.Generator;
 
 namespace Santol.IR
 {
@@ -36,6 +37,14 @@ namespace Santol.IR
         public void AddBlock(Block block)
         {
             Blocks.Add(block);
+        }
+
+        public void Generate(CodeGenerator codeGenerator)
+        {
+            if(ChildZones.Count != 0)
+                throw new NotImplementedException("Child zones not added yet");
+            foreach (Block block in Blocks)
+                block.Generate(codeGenerator);
         }
     }
 }
