@@ -188,6 +188,8 @@ namespace Santol.IR
 
         public IType GetMostComplexType(IType other)
         {
+            if (other.Equals(this))
+                return this;
             if (other is PrimitiveType)
             {
                 PrimitiveType result;
