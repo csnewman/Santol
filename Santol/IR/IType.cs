@@ -9,6 +9,9 @@ namespace Santol.IR
     {
         string Name { get; }
         string MangledName { get; }
+        bool IsAllowedOnStack { get; }
+
+        IType GetLocalReferenceType();
 
         LLVMTypeRef GetType(CodeGenerator codeGenerator);
 

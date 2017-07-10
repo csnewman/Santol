@@ -11,6 +11,7 @@ namespace Santol.IR
     {
         public string Name { get; }
         public string MangledName { get; }
+        public bool IsAllowedOnStack => false;
         private IList<IField> _fields;
         private IDictionary<MethodReference, IMethod> _methods;
 
@@ -30,6 +31,11 @@ namespace Santol.IR
         public void AddMethod(MethodReference reference, IMethod method)
         {
             _methods[reference] = method;
+        }
+
+        public IType GetLocalReferenceType()
+        {
+            throw new NotImplementedException();
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)

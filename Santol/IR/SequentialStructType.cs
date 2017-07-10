@@ -11,6 +11,7 @@ namespace Santol.IR
     {
         public string Name { get; }
         public string MangledName { get; }
+        public bool IsAllowedOnStack => true;
         public bool Packed { get; }
         private IList<IField> _fields;
 
@@ -25,6 +26,11 @@ namespace Santol.IR
         public void AddField(IField field)
         {
             _fields.Add(field);
+        }
+
+        public IType GetLocalReferenceType()
+        {
+            throw new NotImplementedException();
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)

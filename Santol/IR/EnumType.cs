@@ -14,6 +14,7 @@ namespace Santol.IR
     {
         public string Name { get; }
         public string MangledName { get; }
+        public bool IsAllowedOnStack => true;
         public IType UnderlyingType { get; }
         private IList<ConstantField> _fields;
 
@@ -28,6 +29,11 @@ namespace Santol.IR
         public void AddField(ConstantField constant)
         {
             _fields.Add(constant);
+        }
+
+        public IType GetLocalReferenceType()
+        {
+            return this;
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)

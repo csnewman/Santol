@@ -696,8 +696,10 @@ namespace Santol.Loader
             }
             _lastNode = node;
 
-            if (node.HasResult)
-                _nodeStack.Push(node);
+            if (!node.HasResult) return;
+            if (!node.ResultType.IsAllowedOnStack)
+                throw new ArgumentException("Node returns type not allowed on stack");
+            _nodeStack.Push(node);
         }
 
         private NodeReference AddNode(Node node)
@@ -713,6 +715,8 @@ namespace Santol.Loader
 
             if (!node.HasResult)
                 throw new ArgumentException("Nodes without results cannot use add");
+            if (!node.ResultType.IsAllowedOnStack)
+                throw new ArgumentException("Node returns type not allowed on stack");
             return node.TakeReference();
         }
 

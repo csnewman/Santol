@@ -63,10 +63,16 @@ namespace Santol.IR
 
         public string MangledName => Name;
         public string Name { get; }
+        public bool IsAllowedOnStack => true;
 
         private PrimitiveType(string name)
         {
             Name = name;
+        }
+
+        public IType GetLocalReferenceType()
+        {
+            return this;
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
