@@ -48,8 +48,9 @@ namespace Santol.IR
 
         public void Generate(CodeGenerator codeGenerator, FunctionGenerator functionGenerator)
         {
-            Node node = FirstNode;
+            functionGenerator.SelectBlock(this);
 
+            Node node = FirstNode;
             while (node != null)
             {
                 node.Generate(codeGenerator, functionGenerator);

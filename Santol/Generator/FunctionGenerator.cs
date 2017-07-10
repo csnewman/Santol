@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.IR;
@@ -28,9 +29,12 @@ namespace Santol.Generator
             _blockPhis = new Dictionary<string, LLVMValueRef[]>();
         }
 
-        public void CreateBlock(Block block, LLVMTypeRef[] incomings)
+        public void CreateBlock(Block block, CodeGenerator codeGenerator)
         {
-            CreateBlock(block.Name, incomings);
+            CreateBlock(block.Name,
+                block.HasIncoming
+                    ? block.IncomingTypes.Select(type => type.GetType(codeGenerator)).ToArray()
+                    : new LLVMTypeRef[0]);
         }
 
         public void CreateBlock(string name, LLVMTypeRef[] incomings)
@@ -88,7 +92,7 @@ namespace Santol.Generator
             for (int i = 0; i < vals.Length; i++)
                 LLVM.AddIncoming(phis[i], new[] {vals[i]}, new[] {blockref}, 1);
         }
-        
+
         public void BranchConditional(LLVMValueRef condition, string block, string elseBlock, LLVMValueRef[] vals)
         {
             LLVM.BuildCondBr(_codeGenerator.Builder, condition, _namedBlocks[block], _namedBlocks[elseBlock]);

@@ -33,7 +33,7 @@ namespace Santol.IR
             if (implicitThis)
             {
                 Arguments = new IType[arguments.Length + 1];
-                arguments[0] = parent.GetLocalReferenceType();
+                Arguments[0] = parent.GetLocalReferenceType();
                 arguments.CopyTo(Arguments, 1);
             }
             else
@@ -45,23 +45,39 @@ namespace Santol.IR
             MethodBodyLoader bodyLoader = new MethodBodyLoader(assemblyLoader, codeGenerator);
             BlockRegion baseRegion = bodyLoader.LoadBody(this, _body);
 
+            LLVMTypeRef type = GetMethodType(codeGenerator);
+            LLVMValueRef function = codeGenerator.GetFunction(MangledName, type);
+            LLVM.SetLinkage(function, LLVMLinkage.LLVMExternalLinkage);
 
-            FunctionGenerator functionGenerator = new FunctionGenerator(codeGenerator, this,);
-            baseRegion.Generate(codeGenerator);
+            FunctionGenerator functionGenerator = new FunctionGenerator(codeGenerator, this, function);
+            functionGenerator.CreateBlock("entry", null);
+            functionGenerator.Locals = new LLVMValueRef[_body.Variables.Count];
+            foreach (VariableDefinition variable in _body.Variables)
+            {
+                string name = "local_" +
+                              (string.IsNullOrEmpty(variable.Name) ? variable.Index.ToString() : variable.Name);
+                LLVMTypeRef localType = assemblyLoader.ResolveType(variable.VariableType).GetType(codeGenerator);
+                functionGenerator.Locals[variable.Index] = LLVM.BuildAlloca(codeGenerator.Builder, localType, name);
+            }
+
+            foreach (Block block in bodyLoader.Blocks)
+                functionGenerator.CreateBlock(block, codeGenerator);
+
+            baseRegion.Generate(codeGenerator, functionGenerator);
+
+            functionGenerator.SelectBlock("entry");
+            functionGenerator.Branch(bodyLoader.GetFirstBlock(), null);
         }
 
         public LLVMTypeRef GetMethodType(CodeGenerator codeGenerator)
         {
             LLVMTypeRef returnType = ReturnType.GetType(codeGenerator);
-            LLVMTypeRef[] argTypes = new LLVMTypeRef[Arguments.Length + (ImplicitThis ? 1 : 0)];
+            LLVMTypeRef[] argTypes = new LLVMTypeRef[Arguments.Length];
 
             for (int i = 0; i < Arguments.Length; i++)
-                argTypes[i + (ImplicitThis ? 1 : 0)] = Arguments[i].GetType(codeGenerator);
+                argTypes[i] = Arguments[i].GetType(codeGenerator);
 
-            if(IsLocal)
-                argTypes[0] = 
-
-            throw new System.NotImplementedException();
+            return LLVM.FunctionType(returnType, argTypes, false);
         }
 
         public LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments)

@@ -16,6 +16,7 @@ namespace Santol.Generator
         public LLVMBuilderRef Builder { get; private set; }
         private IDictionary<string, LLVMValueRef> _globals;
         private IDictionary<string, LLVMTypeRef> _structCache;
+        private IDictionary<string, LLVMValueRef> _functionCache;
 
         public CodeGenerator(string targetPlatform, int optimisation, string moduleName)
         {
@@ -50,6 +51,7 @@ namespace Santol.Generator
 
             _globals = new Dictionary<string, LLVMValueRef>();
             _structCache = new Dictionary<string, LLVMTypeRef>();
+            _functionCache = new Dictionary<string, LLVMValueRef>();
         }
 
         public void DumpModuleToFile(string file)
@@ -114,6 +116,17 @@ namespace Santol.Generator
             _structCache[name] = type;
             generateAction(type);
             return type;
+        }
+
+        public LLVMValueRef GetFunction(string name, LLVMTypeRef type)
+        {
+            if (_functionCache.ContainsKey(name))
+                return _functionCache[name];
+
+            LLVMValueRef func = LLVM.AddFunction(Module, name, type);
+            LLVM.SetLinkage(func, LLVMLinkage.LLVMAvailableExternallyLinkage);
+            _functionCache[name] = func;
+            return func;
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Santol.Loader
         private IList<Instruction> _noIncomings;
         private BlockRegion _baseRegion;
         private IDictionary<RegionMap, BlockRegion> _regionMappings;
-        private IList<Block> _blocks;
+        public IList<Block> Blocks { get; private set; }
         private IDictionary<Instruction, Block> _blockMap;
         private IDictionary<Block, IList<Instruction>> _blockInstructions;
         private Node _firstNode, _lastNode;
@@ -315,7 +315,7 @@ namespace Santol.Loader
 
         private void GenerateBlocks()
         {
-            _blocks = new List<Block>();
+            Blocks = new List<Block>();
             _blockMap = new Dictionary<Instruction, Block>();
             _blockInstructions = new Dictionary<Block, IList<Instruction>>();
 
@@ -331,7 +331,7 @@ namespace Santol.Loader
                     BlockRegion region = GetRegion(instruction);
                     currentBlock = new Block("block_" + lastId++, region);
                     currentBlock.ForcedNoIncomings = _noIncomings.Contains(instruction);
-                    _blocks.Add(currentBlock);
+                    Blocks.Add(currentBlock);
                     region.AddBlock(currentBlock);
                     instructions = new List<Instruction>();
                     _blockInstructions[currentBlock] = instructions;
@@ -350,10 +350,15 @@ namespace Santol.Loader
             return _blockMap[instruction];
         }
 
+        public Block GetFirstBlock()
+        {
+            return _blockMap[_body.Instructions.First()];
+        }
+
         private void ParseBlocks(IList<Block> parsedBlocks)
         {
             int parsed = 0;
-            foreach (Block block in _blocks)
+            foreach (Block block in Blocks)
             {
                 if (parsedBlocks.Contains(block))
                     continue;
@@ -364,8 +369,8 @@ namespace Santol.Loader
             }
             if (parsed > 0)
                 ParseBlocks(parsedBlocks);
-            else if (parsedBlocks.Count != _blocks.Count)
-                throw new ArgumentException($"Failed to parse all blocks, parsed {parsedBlocks.Count}/{_blocks.Count}");
+            else if (parsedBlocks.Count != Blocks.Count)
+                throw new ArgumentException($"Failed to parse all blocks, parsed {parsedBlocks.Count}/{Blocks.Count}");
         }
 
         private Tuple<IType[], NodeReference[]> CollapseStack()
@@ -600,7 +605,7 @@ namespace Santol.Loader
 
                         for (int i = 0; i < args.Length; i++)
                             args[args.Length - 1 - i] = PopNode();
-                        
+
                         PushNode(new CallVirtual(method, PopNode(), args));
                         break;
                     }
