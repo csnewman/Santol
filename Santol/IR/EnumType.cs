@@ -48,12 +48,12 @@ namespace Santol.IR
 
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
-            return UnderlyingType.ConvertTo(codeGenerator, type, value);
+            return type.Equals(UnderlyingType) ? value : UnderlyingType.ConvertTo(codeGenerator, type, value);
         }
 
         public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
-            return UnderlyingType.ConvertFrom(codeGenerator, type, value);
+            return type.Equals(UnderlyingType) ? value : UnderlyingType.ConvertFrom(codeGenerator, type, value);
         }
 
         public IType GetMostComplexType(IType other)
