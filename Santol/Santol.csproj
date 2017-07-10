@@ -140,6 +140,7 @@
     <Compile Include="IR\IType.cs" />
     <Compile Include="IR\LocalField.cs" />
     <Compile Include="IR\Block.cs" />
+    <Compile Include="IR\ObjectReference.cs" />
     <Compile Include="IR\PrimitiveType.cs" />
     <Compile Include="IR\StandardMethod.cs" />
     <Compile Include="IR\StaticField.cs" />

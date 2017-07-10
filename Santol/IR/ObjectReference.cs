@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
@@ -7,40 +10,33 @@ using Santol.Loader;
 
 namespace Santol.IR
 {
-    public class SequentialStructType : IType
+    public class ObjectReference : IType
     {
         public string Name { get; }
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
-        public bool Packed { get; }
-        private IList<IField> _fields;
+        public IType Target { get; }
 
-        public SequentialStructType(string name, bool packed)
+        public ObjectReference(IType target)
         {
-            Name = name;
-            MangledName = $"SS_{name.Replace('.', '_')}";
-            Packed = packed;
-            _fields = new List<IField>();
-        }
-
-        public void AddField(IField field)
-        {
-            _fields.Add(field);
+            Name = $"{target.Name}*";
+            MangledName = $"_{target.MangledName}_OPTR";
+            Target = target;
         }
 
         public IType GetLocalReferenceType()
         {
-            throw new NotImplementedException();
+            return this;
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
-            throw new NotImplementedException();
+            return LLVM.PointerType(Target.GetType(codeGenerator), 0);
         }
 
         public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
         {
-            throw new NotSupportedException("Constant sequential structs not supported");
+            throw new NotImplementedException();
         }
 
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
@@ -75,9 +71,7 @@ namespace Santol.IR
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
-            foreach (IField field in _fields)
-                field.Generate(assemblyLoader, codeGenerator);
-            //            throw new NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

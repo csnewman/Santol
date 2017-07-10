@@ -21,7 +21,7 @@ namespace Santol.IR
         public EnumType(string name, IType underlyingType)
         {
             Name = name;
-            MangledName = $"E_{name.Replace('.', '_').Replace("*", "PTR")}";
+            MangledName = $"E_{name.Replace('.', '_')}";
             UnderlyingType = underlyingType;
             _fields = new List<ConstantField>();
         }
