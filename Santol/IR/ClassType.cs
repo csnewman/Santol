@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
@@ -14,13 +15,15 @@ namespace Santol.IR
         public bool IsAllowedOnStack => false;
         private IList<IField> _fields;
         private IDictionary<MethodReference, IMethod> _methods;
+        private IType _localReferenceType;
 
         public ClassType(string name)
         {
             Name = name;
-            MangledName = $"C_{name.Replace('.', '_').Replace("*", "PTR")}";
+            MangledName = $"C_{name.Replace('.', '_')}";
             _fields = new List<IField>();
             _methods = new Dictionary<MethodReference, IMethod>();
+            _localReferenceType = new ObjectReference(this);
         }
 
         public void AddField(IField field)
@@ -35,12 +38,19 @@ namespace Santol.IR
 
         public IType GetLocalReferenceType()
         {
-            throw new NotImplementedException();
+            return _localReferenceType;
         }
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
-            throw new NotImplementedException();
+            return codeGenerator.GetStruct(MangledName, type =>
+            {
+                IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
+                // Add a real body
+                types.Add(LLVM.Int32TypeInContext(codeGenerator.Context));
+
+                LLVM.StructSetBody(type, types.ToArray(), false);
+            });
         }
 
         public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
