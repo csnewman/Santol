@@ -27,7 +27,7 @@ namespace Santol.Nodes
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
             fgen.StoreDirect(Value.GetRef(codeGenerator, Field.Type),
-                Object.GetRef(codeGenerator, PrimitiveType.UIntPtr));
+                Field.Parent.GetFieldAddress(codeGenerator, Object.GetRef(), Field));
         }
 
         public override string ToFullString()
