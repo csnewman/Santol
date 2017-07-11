@@ -64,6 +64,7 @@ namespace Santol.IR
         public string MangledName => Name;
         public string Name { get; }
         public bool IsAllowedOnStack => true;
+        public bool IsPointer => false;
 
         private PrimitiveType(string name)
         {
@@ -217,6 +218,11 @@ namespace Santol.IR
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
         {
             throw new NotImplementedException($"Primitive types have no supported fields, {field.Name}");
+        }
+
+        public LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field)
+        {
+            throw new NotImplementedException();
         }
 
         public IMethod ResolveMethod(MethodReference method)

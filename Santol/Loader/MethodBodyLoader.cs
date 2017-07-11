@@ -439,7 +439,8 @@ namespace Santol.Loader
                     {
                         VariableDefinition definition = (VariableDefinition) instruction.Operand;
                         PushNode(new LoadLocalAddress(
-                            new IR.PointerType(_assemblyLoader.ResolveType(definition.VariableType)), definition.Index));
+                            new IR.PointerType(_assemblyLoader.ResolveType(definition.VariableType)),
+                            definition.Index));
                         break;
                     }
                     case Code.Ldarg:
@@ -474,10 +475,13 @@ namespace Santol.Loader
                             PopNode()));
                         break;
                     case Code.Stfld:
-                        PushNode(new StoreField(PopNode(),
-                            _assemblyLoader.ResolveField((FieldReference) instruction.Operand), PopNode()));
+                    {
+                        NodeReference val = PopNode();
+                        NodeReference obj = PopNode();
+                        PushNode(new StoreField(obj, _assemblyLoader.ResolveField((FieldReference) instruction.Operand),
+                            val));
                         break;
-
+                    }
                     case Code.Stind_I1:
                         PushNode(new StoreDirect(PrimitiveType.Byte, PopNode(), PopNode()));
                         break;

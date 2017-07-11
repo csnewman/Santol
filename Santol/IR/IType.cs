@@ -10,6 +10,7 @@ namespace Santol.IR
         string Name { get; }
         string MangledName { get; }
         bool IsAllowedOnStack { get; }
+        bool IsPointer { get; }
 
         IType GetLocalReferenceType();
 
@@ -28,6 +29,8 @@ namespace Santol.IR
         IField ResolveField(FieldReference field);
 
         LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field);
+
+        LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field);
 
         IMethod ResolveMethod(MethodReference method);
 

@@ -26,7 +26,12 @@ namespace Santol.Nodes
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            SetRef(fgen.LoadDirect(Field.Parent.GetFieldAddress(codeGenerator, Object.GetRef(), Field)));
+            if (Object.ResultType.IsPointer)
+                SetRef(fgen.LoadDirect(Field.Parent.GetFieldAddress(codeGenerator, Object.GetRef(), Field)));
+            else
+                SetRef(Field.Parent.ExtractField(codeGenerator, Object.GetRef(), Field));
+
+
         }
 
         public override string ToFullString() => $"LoadField [Object: {Object}, Field: {Field}]";

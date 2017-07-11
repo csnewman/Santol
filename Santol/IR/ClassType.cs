@@ -13,6 +13,7 @@ namespace Santol.IR
         public string Name { get; }
         public string MangledName { get; }
         public bool IsAllowedOnStack => false;
+        public bool IsPointer => false;
         private IDictionary<FieldReference, IField> _fields;
         private IDictionary<MethodReference, IMethod> _methods;
         private IType _localReferenceType;
@@ -84,6 +85,11 @@ namespace Santol.IR
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
+        {
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field)
         {
             throw new NotImplementedException();
         }

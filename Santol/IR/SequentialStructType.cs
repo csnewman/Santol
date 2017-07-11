@@ -15,6 +15,7 @@ namespace Santol.IR
         public string Name { get; }
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
+        public bool IsPointer => false;
         public bool Packed { get; }
         private IOrderedDictionary _fields;
 
@@ -83,7 +84,7 @@ namespace Santol.IR
             return (IField) _fields[field];
         }
 
-        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField target)
+        private int GetFieldIndex(IField target)
         {
             if (target.IsShared)
                 throw new ArgumentException();
@@ -103,8 +104,17 @@ namespace Santol.IR
             }
             if (!found)
                 throw new ArgumentException();
+            return index;
+        }
 
-            return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, (uint) index, "");
+        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
+        {
+            return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, (uint) GetFieldIndex(field), "");
+        }
+
+        public LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field)
+        {
+            return LLVM.BuildExtractValue(codeGenerator.Builder, objectRef, (uint) GetFieldIndex(field), "");
         }
 
         public IMethod ResolveMethod(MethodReference method)
