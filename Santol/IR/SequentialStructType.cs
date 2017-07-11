@@ -13,19 +13,19 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
         public bool Packed { get; }
-        private IList<IField> _fields;
+        private IDictionary<FieldReference, IField> _fields;
 
         public SequentialStructType(string name, bool packed)
         {
             Name = name;
             MangledName = $"SS_{name.Replace('.', '_')}";
             Packed = packed;
-            _fields = new List<IField>();
+            _fields = new Dictionary<FieldReference, IField>();
         }
 
-        public void AddField(IField field)
+        public void AddField(FieldReference reference, IField field)
         {
-            _fields.Add(field);
+            _fields[reference] = field;
         }
 
         public IType GetLocalReferenceType()
@@ -60,7 +60,7 @@ namespace Santol.IR
 
         public IField ResolveField(FieldReference field)
         {
-            throw new NotImplementedException();
+            return _fields[field];
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
@@ -75,7 +75,7 @@ namespace Santol.IR
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
-            foreach (IField field in _fields)
+            foreach (IField field in _fields.Values)
                 field.Generate(assemblyLoader, codeGenerator);
             //            throw new NotImplementedException();
         }

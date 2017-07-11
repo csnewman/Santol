@@ -13,7 +13,7 @@ namespace Santol.IR
         public string Name { get; }
         public string MangledName { get; }
         public bool IsAllowedOnStack => false;
-        private IList<IField> _fields;
+        private IDictionary<FieldReference, IField> _fields;
         private IDictionary<MethodReference, IMethod> _methods;
         private IType _localReferenceType;
 
@@ -21,14 +21,14 @@ namespace Santol.IR
         {
             Name = name;
             MangledName = $"C_{name.Replace('.', '_')}";
-            _fields = new List<IField>();
+            _fields = new Dictionary<FieldReference, IField>();
             _methods = new Dictionary<MethodReference, IMethod>();
             _localReferenceType = new ObjectReference(this);
         }
 
-        public void AddField(IField field)
+        public void AddField(FieldReference reference, IField field)
         {
-            _fields.Add(field);
+            _fields[reference] = field;
         }
 
         public void AddMethod(MethodReference reference, IMethod method)
@@ -75,7 +75,7 @@ namespace Santol.IR
 
         public IField ResolveField(FieldReference field)
         {
-            throw new NotImplementedException();
+            return _fields[field];
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
@@ -90,7 +90,7 @@ namespace Santol.IR
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
-            foreach (IField field in _fields)
+            foreach (IField field in _fields.Values)
             {
                 Console.WriteLine($" - Generating {field.Name}");
                 field.Generate(assemblyLoader, codeGenerator);
