@@ -618,6 +618,12 @@ namespace Santol.Loader
                         break;
                     }
 
+                    case Code.Initobj:
+                        PushNode(new InitObject(_assemblyLoader.ResolveType((TypeReference) instruction.Operand),
+                            PopNode()));
+                        break;
+
+
                     case Code.Br:
                     {
                         Block target = GetBlock((Instruction) instruction.Operand);
