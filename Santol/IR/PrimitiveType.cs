@@ -132,6 +132,11 @@ namespace Santol.IR
             throw new ArgumentException("Unexpected type " + this);
         }
 
+        public void LoadDefault(CodeGenerator codeGenerator, LLVMValueRef target)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
             if (type is PrimitiveType)

@@ -46,6 +46,11 @@ namespace Santol.IR
             return UnderlyingType.GenerateConstantValue(codeGenerator, value);
         }
 
+        public void LoadDefault(CodeGenerator codeGenerator, LLVMValueRef target)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
             return type.Equals(UnderlyingType) ? value : UnderlyingType.ConvertTo(codeGenerator, type, value);

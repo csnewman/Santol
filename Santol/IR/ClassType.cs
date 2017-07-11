@@ -58,6 +58,11 @@ namespace Santol.IR
             throw new NotSupportedException("Constant classes not supported");
         }
 
+        public void LoadDefault(CodeGenerator codeGenerator, LLVMValueRef target)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
             throw new NotImplementedException();

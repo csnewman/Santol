@@ -58,6 +58,11 @@ namespace Santol.IR
             throw new NotSupportedException("Constant sequential structs not supported");
         }
 
+        public void LoadDefault(CodeGenerator codeGenerator, LLVMValueRef target)
+        {
+            LLVM.BuildStore(codeGenerator.Builder, LLVM.ConstNull(GetType(codeGenerator)), target);
+        }
+
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
             throw new NotImplementedException();

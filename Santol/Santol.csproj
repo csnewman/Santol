@@ -162,6 +162,7 @@
     <Compile Include="Nodes\ConditionalBranch.cs" />
     <Compile Include="Nodes\Convert.cs" />
     <Compile Include="Nodes\IncomingValue.cs" />
+    <Compile Include="Nodes\InitObject.cs" />
     <Compile Include="Nodes\LoadArg.cs" />
     <Compile Include="Nodes\LoadDirect.cs" />
     <Compile Include="Nodes\LoadField.cs" />
