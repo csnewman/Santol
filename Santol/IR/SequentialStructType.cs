@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
@@ -13,19 +16,19 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
         public bool Packed { get; }
-        private IDictionary<FieldReference, IField> _fields;
+        private IOrderedDictionary _fields;
 
         public SequentialStructType(string name, bool packed)
         {
             Name = name;
             MangledName = $"SS_{name.Replace('.', '_')}";
             Packed = packed;
-            _fields = new Dictionary<FieldReference, IField>();
+            _fields = new OrderedDictionary();
         }
 
         public void AddField(FieldReference reference, IField field)
         {
-            _fields[reference] = field;
+            _fields.Add(reference, field);
         }
 
         public IType GetLocalReferenceType()
@@ -35,7 +38,19 @@ namespace Santol.IR
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
-            throw new NotImplementedException();
+            return codeGenerator.GetStruct(MangledName, type =>
+            {
+                IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
+
+                foreach (DictionaryEntry entry in _fields)
+                {
+                    IField field = (IField) entry.Value;
+                    if (!field.IsShared)
+                        types.Add(field.Type.GetType(codeGenerator));
+                }
+
+                LLVM.StructSetBody(type, types.ToArray(), false);
+            });
         }
 
         public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)
@@ -60,7 +75,7 @@ namespace Santol.IR
 
         public IField ResolveField(FieldReference field)
         {
-            return _fields[field];
+            return (IField) _fields[field];
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
