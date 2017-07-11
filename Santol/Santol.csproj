@@ -166,6 +166,7 @@
     <Compile Include="Nodes\LoadDirect.cs" />
     <Compile Include="Nodes\LoadField.cs" />
     <Compile Include="Nodes\LoadLocal.cs" />
+    <Compile Include="Nodes\LoadLocalAddress.cs" />
     <Compile Include="Nodes\LoadPrimitiveConstant.cs" />
     <Compile Include="Nodes\LoadStatic.cs" />
     <Compile Include="Nodes\NewObject.cs" />

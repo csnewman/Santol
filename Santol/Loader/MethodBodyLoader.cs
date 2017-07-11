@@ -435,6 +435,13 @@ namespace Santol.Loader
                         PushNode(new LoadLocal(_assemblyLoader.ResolveType(definition.VariableType), definition.Index));
                         break;
                     }
+                    case Code.Ldloca:
+                    {
+                        VariableDefinition definition = (VariableDefinition) instruction.Operand;
+                        PushNode(new LoadLocalAddress(
+                            new IR.PointerType(_assemblyLoader.ResolveType(definition.VariableType)), definition.Index));
+                        break;
+                    }
                     case Code.Ldarg:
                     {
                         ParameterDefinition definition = (ParameterDefinition) instruction.Operand;
