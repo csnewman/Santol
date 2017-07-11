@@ -35,8 +35,7 @@ namespace Santol.Loader
 
         public IType ResolveType(TypeReference reference)
         {
-            Console.WriteLine(" - Resolving type " + reference.FullName + " " + reference.MetadataType + "  " +
-                              reference.IsByReference + " " + reference.IsPointer);
+            Console.WriteLine(" - Resolving type " + reference.FullName);
             TypeDefinition definition = reference.Resolve();
 
             switch (reference.MetadataType)
@@ -72,7 +71,7 @@ namespace Santol.Loader
                 case MetadataType.UIntPtr:
                     return PrimitiveType.UIntPtr;
                 case MetadataType.Pointer:
-                    throw new NotImplementedException("Type not implemented! " + reference+"   >> "+ ((Mono.Cecil.PointerType)reference).ElementType);
+                    return new IR.PointerType(ResolveType(((Mono.Cecil.PointerType) reference).ElementType));
                 case MetadataType.String:
                     throw new NotImplementedException("Type not implemented! " + reference);
                 case MetadataType.ValueType:
