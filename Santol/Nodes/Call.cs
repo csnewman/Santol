@@ -24,12 +24,6 @@ namespace Santol.Nodes
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            Console.WriteLine("Generating call " + ToFullString());
-            foreach (NodeReference nodeReference in Arguments)
-            {
-                Console.WriteLine(nodeReference.ResultType + "   " + LLVM.TypeOf(nodeReference.GetRef()));
-            }
-
             if (Method.Arguments.Length != Arguments.Length)
                 throw new ArgumentException("Incorrect number of arguments!");
 
