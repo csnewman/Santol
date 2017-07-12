@@ -67,6 +67,7 @@ namespace Santol.Loader
 
             // Seperate instructions into blocks
             _body.SimplifyMacros();
+            ReplaceRuntimeArrayInitalizers();
             FixFallthroughs();
             FixMidBranches();
             DetectNoIncomings();
@@ -82,6 +83,88 @@ namespace Santol.Loader
             ParseBlocks(new List<Block>());
 
             return _baseRegion;
+        }
+
+        private void ReplaceRuntimeArrayInitalizers()
+        {
+            Instruction current = _body.Instructions.First();
+            while (current != null)
+            {
+                Instruction loadConstant = current;
+                Instruction newArray = current.Next;
+                Instruction dupeArray = newArray?.Next;
+                Instruction loadToken = dupeArray?.Next;
+                Instruction call = loadToken?.Next;
+                Instruction next = call?.Next;
+                if (OpEquals(loadConstant, OpCodes.Ldc_I4) && OpEquals(newArray, OpCodes.Newarr) &&
+                    OpEquals(dupeArray, OpCodes.Dup) && OpEquals(loadToken, OpCodes.Ldtoken) &&
+                    OpEquals(call, OpCodes.Call))
+                {
+                    int arraySize = (int) loadConstant.Operand;
+                    IType arrayType = _assemblyLoader.ResolveType((TypeReference) newArray.Operand);
+                    byte[] initialBytes = ((FieldDefinition) loadToken.Operand).InitialValue;
+
+                    PrimitiveType primitiveType;
+                    if (arrayType is PrimitiveType)
+                        primitiveType = (PrimitiveType) arrayType;
+                    else if (arrayType is EnumType)
+                        primitiveType = (PrimitiveType) ((EnumType) arrayType).UnderlyingType;
+                    else
+                        throw new NotSupportedException();
+
+                    int elementSize = primitiveType.CilElementSize;
+                    Func<byte[], int, object> elementExtractor = primitiveType.CilElementExtractor;
+
+                    if (initialBytes.Length != arraySize * elementSize)
+                        throw new ArgumentException("Initial Bytes of incorrect size!");
+
+                    _processor.Remove(dupeArray);
+                    _processor.Remove(loadToken);
+                    _processor.Remove(call);
+
+                    Instruction last = newArray;
+                    for (int i = 0; i < arraySize; i++)
+                    {
+                        Instruction dupe = _processor.Create(OpCodes.Dup);
+                        Instruction arrayIndex = _processor.Create(OpCodes.Ldc_I4, i);
+                        Instruction value =
+                            CreateTypeConstant(arrayType, elementExtractor(initialBytes, i * elementSize));
+                        Instruction store = _processor.Create(OpCodes.Stelem_Any, (TypeReference) newArray.Operand);
+
+                        _processor.InsertAfter(last, dupe);
+                        _processor.InsertAfter(dupe, arrayIndex);
+                        _processor.InsertAfter(arrayIndex, value);
+                        _processor.InsertAfter(value, store);
+                        last = store;
+                    }
+
+
+                    PrintInstructions();
+                    current = next;
+                }
+                else
+                    current = current.Next;
+            }
+        }
+
+        private Instruction CreateTypeConstant(IType type, object value)
+        {
+            if (type == PrimitiveType.Boolean || type == PrimitiveType.Byte || type == PrimitiveType.SByte ||
+                type == PrimitiveType.Char || type == PrimitiveType.Int16 || type == PrimitiveType.UInt16 ||
+                type == PrimitiveType.Int32 || type == PrimitiveType.UInt32)
+                return _processor.Create(OpCodes.Ldc_I4, System.Convert.ToInt32(value));
+            else if (type == PrimitiveType.Int64 || type == PrimitiveType.UInt64)
+                return _processor.Create(OpCodes.Ldc_I8, System.Convert.ToInt64(value));
+            else if (type == PrimitiveType.Single)
+                return _processor.Create(OpCodes.Ldc_R4, (float) value);
+            else if (type == PrimitiveType.Double)
+                return _processor.Create(OpCodes.Ldc_R8, (double) value);
+            throw new ArgumentException();
+        }
+
+        private bool OpEquals(Instruction instruction, OpCode code)
+        {
+            return instruction != null && instruction.OpCode == code;
         }
 
         private IList<Instruction> GetJumpDestinations()

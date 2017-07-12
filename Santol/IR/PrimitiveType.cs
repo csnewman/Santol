@@ -9,21 +9,41 @@ namespace Santol.IR
 {
     public sealed class PrimitiveType : IType
     {
-        public static readonly PrimitiveType Void = new PrimitiveType("void");
-        public static readonly PrimitiveType Boolean = new PrimitiveType("bool");
-        public static readonly PrimitiveType Byte = new PrimitiveType("byte");
-        public static readonly PrimitiveType SByte = new PrimitiveType("sbyte");
-        public static readonly PrimitiveType Char = new PrimitiveType("char");
-        public static readonly PrimitiveType Int16 = new PrimitiveType("int16");
-        public static readonly PrimitiveType UInt16 = new PrimitiveType("uint16");
-        public static readonly PrimitiveType Int32 = new PrimitiveType("int32");
-        public static readonly PrimitiveType UInt32 = new PrimitiveType("uint32");
-        public static readonly PrimitiveType Int64 = new PrimitiveType("int64");
-        public static readonly PrimitiveType UInt64 = new PrimitiveType("uint64");
-        public static readonly PrimitiveType Single = new PrimitiveType("single");
-        public static readonly PrimitiveType Double = new PrimitiveType("double");
-        public static readonly PrimitiveType IntPtr = new PrimitiveType("intptr");
-        public static readonly PrimitiveType UIntPtr = new PrimitiveType("uintptr");
+        public static readonly PrimitiveType Void = new PrimitiveType("void", 0, (a, i) => null);
+        public static readonly PrimitiveType Boolean = new PrimitiveType("bool", 1, (a, i) => a[i] != 0);
+        public static readonly PrimitiveType Byte = new PrimitiveType("byte", 1, (a, i) => a[i]);
+        public static readonly PrimitiveType SByte = new PrimitiveType("sbyte", 1, (a, i) => (sbyte) a[i]);
+        public static readonly PrimitiveType Char = new PrimitiveType("char", 2, (a, i) => BitConverter.ToChar(a, i));
+
+        public static readonly PrimitiveType Int16 =
+            new PrimitiveType("int16", 2, (a, i) => BitConverter.ToInt16(a, i));
+
+        public static readonly PrimitiveType UInt16 =
+            new PrimitiveType("uint16", 2, (a, i) => BitConverter.ToUInt16(a, i));
+
+        public static readonly PrimitiveType Int32 =
+            new PrimitiveType("int32", 4, (a, i) => BitConverter.ToInt32(a, i));
+
+        public static readonly PrimitiveType UInt32 =
+            new PrimitiveType("uint32", 4, (a, i) => BitConverter.ToUInt32(a, i));
+
+        public static readonly PrimitiveType Int64 =
+            new PrimitiveType("int64", 8, (a, i) => BitConverter.ToInt64(a, i));
+
+        public static readonly PrimitiveType UInt64 =
+            new PrimitiveType("uint64", 8, (a, i) => BitConverter.ToUInt64(a, i));
+
+        public static readonly PrimitiveType Single =
+            new PrimitiveType("single", 4, (a, i) => BitConverter.ToSingle(a, i));
+
+        public static readonly PrimitiveType Double =
+            new PrimitiveType("double", 8, (a, i) => BitConverter.ToDouble(a, i));
+
+        public static readonly PrimitiveType IntPtr =
+            new PrimitiveType("intptr", -1, (a, i) => throw new NotSupportedException());
+
+        public static readonly PrimitiveType UIntPtr =
+            new PrimitiveType("uintptr", -1, (a, i) => throw new NotSupportedException());
 
         private enum ConversionMethod
         {
@@ -65,10 +85,14 @@ namespace Santol.IR
         public string Name { get; }
         public bool IsAllowedOnStack => true;
         public bool IsPointer => false;
+        public int CilElementSize { get; }
+        public Func<byte[], int, object> CilElementExtractor { get; }
 
-        private PrimitiveType(string name)
+        private PrimitiveType(string name, int elementSize, Func<byte[], int, object> elementExtractor)
         {
             Name = name;
+            CilElementSize = elementSize;
+            CilElementExtractor = elementExtractor;
         }
 
         public IType GetLocalReferenceType()
