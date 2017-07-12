@@ -21,7 +21,7 @@ namespace Santol.Loader
 
             foreach (TypeDefinition type in assembly.MainModule.Types)
             {
-                if (type.Name.Equals("<Module>")) continue;
+                if (type.Name.StartsWith("<")) continue;
                 types.Add(ResolveType(type));
             }
 
