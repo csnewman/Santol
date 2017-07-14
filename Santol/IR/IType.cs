@@ -32,7 +32,7 @@ namespace Santol.IR
 
         LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field);
 
-        IMethod ResolveMethod(MethodReference method);
+        IMethod ResolveMethod(AssemblyLoader assemblyLoader, MethodReference method);
 
         void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator);
     }

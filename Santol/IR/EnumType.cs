@@ -82,7 +82,7 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
-        public IMethod ResolveMethod(MethodReference method)
+        public IMethod ResolveMethod(AssemblyLoader assemblyLoader, MethodReference method)
         {
             throw new NotSupportedException("Enums can not have methods");
         }

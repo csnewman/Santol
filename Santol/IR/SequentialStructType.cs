@@ -117,7 +117,7 @@ namespace Santol.IR
             return LLVM.BuildExtractValue(codeGenerator.Builder, objectRef, (uint) GetFieldIndex(field), "");
         }
 
-        public IMethod ResolveMethod(MethodReference method)
+        public IMethod ResolveMethod(AssemblyLoader assemblyLoader, MethodReference method)
         {
             throw new NotImplementedException();
         }

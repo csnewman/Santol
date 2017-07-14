@@ -197,7 +197,7 @@ namespace Santol.Loader
 
         public IMethod ResolveMethod(MethodReference method)
         {
-            return ResolveType(method.DeclaringType).ResolveMethod(method);
+            return ResolveType(method.DeclaringType).ResolveMethod(this, method);
         }
     }
 }
