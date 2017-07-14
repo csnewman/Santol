@@ -135,6 +135,8 @@
     <Compile Include="IR\ClassType.cs" />
     <Compile Include="IR\ConstantField.cs" />
     <Compile Include="IR\EnumType.cs" />
+    <Compile Include="IR\ExternalMethod.cs" />
+    <Compile Include="IR\FakeMethod.cs" />
     <Compile Include="IR\IField.cs" />
     <Compile Include="IR\IMethod.cs" />
     <Compile Include="IR\IType.cs" />

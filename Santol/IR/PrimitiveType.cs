@@ -4,6 +4,7 @@ using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
 using Santol.Loader;
+using Santol.Nodes;
 
 namespace Santol.IR
 {
@@ -71,6 +72,7 @@ namespace Santol.IR
                 [new Tuple<PrimitiveType, PrimitiveType>(UInt32, UIntPtr)] = ConversionMethod.IntToPtr,
                 [new Tuple<PrimitiveType, PrimitiveType>(Int64, UInt64)] = ConversionMethod.Bitcast,
                 [new Tuple<PrimitiveType, PrimitiveType>(Int64, UIntPtr)] = ConversionMethod.IntToPtr,
+                [new Tuple<PrimitiveType, PrimitiveType>(UInt64, UIntPtr)] = ConversionMethod.IntToPtr,
                 [new Tuple<PrimitiveType, PrimitiveType>(IntPtr, UIntPtr)] = ConversionMethod.Bitcast
             };
 
@@ -251,7 +253,21 @@ namespace Santol.IR
 
         public IMethod ResolveMethod(AssemblyLoader assemblyLoader, MethodReference method)
         {
-            throw new NotImplementedException($"Primitive types have no supported fields, {method.Name}");
+            if (method.Name.Equals("op_Explicit"))
+            {
+                IType fromType = assemblyLoader.ResolveType(method.Parameters[0].ParameterType);
+                return new FakeMethod(this, new[] {fromType},
+                    (generator, refs) =>
+                    {
+                        LLVMValueRef? val = ConvertFrom(generator, fromType, refs[0]);
+                        if (!val.HasValue)
+                            throw new NotSupportedException("Failed to convert");
+                        return val;
+                    }
+                );
+            }
+            else
+                throw new NotSupportedException($"Unknown primitive method, {method.Name}");
         }
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
