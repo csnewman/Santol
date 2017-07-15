@@ -528,8 +528,8 @@ namespace Santol.Loader
                     }
                     case Code.Ldarg:
                     {
-                        ParameterDefinition definition = (ParameterDefinition) instruction.Operand;
-                        PushNode(new LoadArg(_assemblyLoader.ResolveType(definition.ParameterType), definition.Index));
+                        int index = ((ParameterDefinition) instruction.Operand).Index + _method.ArgumentOffset;
+                        PushNode(new LoadArg(_method.Arguments[index], index));
                         break;
                     }
                     case Code.Ldsfld:

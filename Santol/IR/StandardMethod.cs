@@ -13,6 +13,7 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsStatic { get; }
         public bool IsLocal { get; }
+        public int ArgumentOffset { get; }
         public IType ReturnType { get; }
         public IType[] Arguments { get; }
         private MethodBody _body;
@@ -35,6 +36,7 @@ namespace Santol.IR
                 Arguments = new IType[arguments.Length + 1];
                 Arguments[0] = parent.GetLocalReferenceType();
                 arguments.CopyTo(Arguments, 1);
+                ArgumentOffset = 1;
             }
             else
                 Arguments = arguments;

@@ -174,7 +174,7 @@ namespace Santol.Loader
                 else if (field.IsStatic)
                     type.AddField(field, new StaticField(type, ResolveType(field.FieldType), field.Name));
                 else
-                    throw new NotImplementedException("Local fields are not implemented");
+                    type.AddField(field, new LocalField(type, ResolveType(field.FieldType), field.Name));
             }
 
             foreach (MethodDefinition method in definition.Methods)
