@@ -143,6 +143,7 @@
     <Compile Include="IR\LocalField.cs" />
     <Compile Include="IR\Block.cs" />
     <Compile Include="IR\ObjectReference.cs" />
+    <Compile Include="IR\ObjectType.cs" />
     <Compile Include="IR\PointerType.cs" />
     <Compile Include="IR\PrimitiveType.cs" />
     <Compile Include="IR\StandardMethod.cs" />

@@ -72,6 +72,8 @@ namespace Santol.Loader
                     return PrimitiveType.UIntPtr;
                 case MetadataType.Pointer:
                     return new IR.PointerType(ResolveType(((Mono.Cecil.PointerType) reference).ElementType));
+                case MetadataType.Object:
+                    return ObjectType.Instance;
                 case MetadataType.String:
                     throw new NotImplementedException("Type not implemented! " + reference);
                 case MetadataType.ValueType:

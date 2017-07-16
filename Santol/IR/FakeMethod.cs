@@ -11,6 +11,9 @@ namespace Santol.IR
 {
     public class FakeMethod : IMethod
     {
+        public static readonly FakeMethod NoAction =
+            new FakeMethod(PrimitiveType.Void, new IType[0], (generator, refs) => null);
+
         public IType Parent => throw new NotSupportedException();
         public string Name => throw new NotSupportedException();
         public string MangledName => throw new NotSupportedException();
