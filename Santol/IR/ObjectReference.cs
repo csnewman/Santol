@@ -15,7 +15,7 @@ namespace Santol.IR
         public string Name { get; }
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
-        public bool IsPointer => false;
+        public bool IsPointer => true;
         public IType Target { get; }
 
         public ObjectReference(IType target)
