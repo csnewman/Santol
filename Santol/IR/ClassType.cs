@@ -42,6 +42,11 @@ namespace Santol.IR
             return _localReferenceType;
         }
 
+        public IType GetStackType()
+        {
+            return _localReferenceType;
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             return codeGenerator.GetStruct(MangledName, type =>

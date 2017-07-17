@@ -24,6 +24,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public IType GetStackType()
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             throw new NotImplementedException();

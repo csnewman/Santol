@@ -37,6 +37,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public IType GetStackType()
+        {
+            return this;
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             return codeGenerator.GetStruct(MangledName, type =>

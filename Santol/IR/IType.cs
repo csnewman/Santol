@@ -14,6 +14,8 @@ namespace Santol.IR
 
         IType GetLocalReferenceType();
 
+        IType GetStackType();
+
         LLVMTypeRef GetType(CodeGenerator codeGenerator);
 
         LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value);

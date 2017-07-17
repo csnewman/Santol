@@ -37,6 +37,11 @@ namespace Santol.IR
             return this;
         }
 
+        public IType GetStackType()
+        {
+            return this;
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             return UnderlyingType.GetType(codeGenerator);
