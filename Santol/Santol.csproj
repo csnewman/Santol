@@ -130,6 +130,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler.cs" />
+    <Compile Include="Hooks.cs" />
     <Compile Include="IR\BlockRegion.cs" />
     <Compile Include="IR\CatchCase.cs" />
     <Compile Include="IR\ClassType.cs" />
