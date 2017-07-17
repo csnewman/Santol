@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LLVMSharp;
-using Mono.Cecil;
 using Santol.Generator;
 using Santol.IR;
 
@@ -15,7 +11,7 @@ namespace Santol.Nodes
         public IMethod Constructor { get; }
         public NodeReference[] Arguments { get; }
         public override bool HasResult => true;
-        public override IType ResultType => Constructor.ReturnType;
+        public override IType ResultType => Constructor.Parent.GetStackType();
 
         public NewObject(IMethod constructor, NodeReference[] arguments)
         {
@@ -23,44 +19,31 @@ namespace Santol.Nodes
             Arguments = arguments;
         }
 
+        [SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-//            TypeDefinition type = ResultType.Resolve();
-//
-//            if (type.IsValueType)
-//            {
-//                LLVMTypeRef structType = Compiler.CodeGenerator.GetStructType(type);
-//                LLVMValueRef allocated = LLVM.BuildAlloca(Compiler.Builder, structType, "");
-//
-//                LLVMValueRef[] args =
-//                    new LLVMValueRef[Arguments.Length + (Constructor.HasThis && !Constructor.ExplicitThis ? 1 : 0)];
-//                for (int i = 0; i < Arguments.Length; i++)
-//                    args[args.Length - 1 - i] = Arguments[Arguments.Length - 1 - i].GetLlvmRef(
-//                        Constructor.Parameters[Arguments.Length - 1 - i].ParameterType);
-//                args[0] = allocated;
-//
-//                foreach (LLVMValueRef llvmValueRef in args)
-//                {
-//                    Console.WriteLine(">> " + LLVM.TypeOf(llvmValueRef));
-//                }
-//
-//                fgen.GenerateCall(Constructor, args);
-//                SetLlvmRef(fgen.LoadDirect(allocated));
-//            }
-//            else
-//            {
-            throw new NotImplementedException();
-//            }
+            //Calculate size
+            LLVMTypeRef objectPtrType = Constructor.Parent.GetStackType().GetType(codeGenerator);
+            LLVMValueRef nullRef = LLVM.ConstNull(objectPtrType);
+            LLVMValueRef sizeRef = LLVM.ConstGEP(nullRef,
+                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(codeGenerator.Context), 1, false)});
+            LLVMValueRef objectSize = LLVM.BuildBitCast(codeGenerator.Builder, sizeRef,
+                PrimitiveType.UIntPtr.GetType(codeGenerator), "");
 
+            // Allocate space
+            LLVMValueRef spacePtr = Hooks.PlatformAllocate.GenerateCall(codeGenerator, new[] {objectSize}).Value;
+            LLVMValueRef objectPtr = LLVM.BuildBitCast(codeGenerator.Builder, spacePtr, objectPtrType, "");
 
-//            LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
-//            for (int i = 0; i < args.Length; i++)
-//                args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetRef(
-//                    Constructor.Parameters[args.Length - 1 - i].ParameterType);
-//
-//            LLVMValueRef? val = fgen.GenerateCall(Constructor, args);
-//            if (val.HasValue)
-//                SetLlvmRef(val.Value);
+            // Call constructor
+            LLVMValueRef[] args = new LLVMValueRef[Constructor.Arguments.Length];
+            args[0] = objectPtr;
+
+            for (int i = 0; i < Arguments.Length; i++)
+                args[1 + i] = Arguments[i].GetRef(codeGenerator, Constructor.Arguments[i]);
+
+            Constructor.GenerateCall(codeGenerator, args.ToArray());
+
+            SetRef(objectPtr);
         }
 
         public override string ToFullString()
