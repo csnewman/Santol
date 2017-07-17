@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using LLVMSharp;
 using Mono.Cecil;
@@ -14,7 +16,7 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => false;
         public bool IsPointer => false;
-        private IDictionary<FieldReference, IField> _fields;
+        private IOrderedDictionary _fields;
         private IDictionary<MethodReference, IMethod> _methods;
         private IType _localReferenceType;
 
@@ -22,14 +24,14 @@ namespace Santol.IR
         {
             Name = name;
             MangledName = $"C_{name.Replace('.', '_')}";
-            _fields = new Dictionary<FieldReference, IField>();
+            _fields = new OrderedDictionary();
             _methods = new Dictionary<MethodReference, IMethod>();
             _localReferenceType = new ObjectReference(this);
         }
 
         public void AddField(FieldReference reference, IField field)
         {
-            _fields[reference] = field;
+            _fields.Add(reference, field);
         }
 
         public void AddMethod(MethodReference reference, IMethod method)
@@ -54,6 +56,13 @@ namespace Santol.IR
                 IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
                 // Add a real body
                 types.Add(LLVM.Int32TypeInContext(codeGenerator.Context));
+
+                foreach (DictionaryEntry entry in _fields)
+                {
+                    IField field = (IField) entry.Value;
+                    if (!field.IsShared)
+                        types.Add(field.Type.GetType(codeGenerator));
+                }
 
                 LLVM.StructSetBody(type, types.ToArray(), false);
             });
@@ -86,12 +95,35 @@ namespace Santol.IR
 
         public IField ResolveField(FieldReference field)
         {
-            return _fields[field];
+            return (IField) _fields[field];
+        }
+
+        private int GetFieldIndex(IField target)
+        {
+            if (target.IsShared)
+                throw new ArgumentException();
+
+            int index = 0;
+            bool found = false;
+            foreach (DictionaryEntry entry in _fields)
+            {
+                IField field = (IField) entry.Value;
+                if (field.IsShared) continue;
+                if (field.Equals(target))
+                {
+                    found = true;
+                    break;
+                }
+                index++;
+            }
+            if (!found)
+                throw new ArgumentException();
+            return index;
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
         {
-            throw new NotImplementedException();
+            return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, (uint) GetFieldIndex(field) + 1, "");
         }
 
         public LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field)
