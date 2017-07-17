@@ -709,7 +709,17 @@ namespace Santol.Loader
                         PushNode(new InitObject(_assemblyLoader.ResolveType((TypeReference) instruction.Operand),
                             PopNode()));
                         break;
+                    case Code.Newobj:
+                    {
+                        IMethod method = _assemblyLoader.ResolveMethod((MethodReference) instruction.Operand);
+                        NodeReference[] args = new NodeReference[method.Arguments.Length - 1];
 
+                        for (int i = 0; i < args.Length; i++)
+                            args[args.Length - 1 - i] = PopNode();
+
+                        PushNode(new NewObject(method, args));
+                        break;
+                    }
 
                     case Code.Br:
                     {
