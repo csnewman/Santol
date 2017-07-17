@@ -499,6 +499,14 @@ namespace Santol.Loader
                     case Code.Nop:
                         break;
 
+                    case Code.Dup:
+                    {
+                        Node node = _nodeStack.Pop();
+                        _nodeStack.Push(node);
+                        _nodeStack.Push(node);
+                        break;
+                    }
+
                     case Code.Ldc_I4:
                         PushNode(new LoadPrimitiveConstant(PrimitiveType.Int32, instruction.Operand));
                         break;
