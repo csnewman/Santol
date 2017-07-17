@@ -58,7 +58,8 @@ namespace Santol.IR
             {
                 string name = "local_" +
                               (string.IsNullOrEmpty(variable.Name) ? variable.Index.ToString() : variable.Name);
-                LLVMTypeRef localType = assemblyLoader.ResolveType(variable.VariableType).GetType(codeGenerator);
+                LLVMTypeRef localType = assemblyLoader.ResolveType(variable.VariableType).GetStackType()
+                    .GetType(codeGenerator);
                 functionGenerator.Locals[variable.Index] = LLVM.BuildAlloca(codeGenerator.Builder, localType, name);
             }
 

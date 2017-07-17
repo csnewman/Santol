@@ -557,7 +557,8 @@ namespace Santol.Loader
                     case Code.Stloc:
                     {
                         VariableDefinition definition = (VariableDefinition) instruction.Operand;
-                        PushNode(new StoreLocal(_assemblyLoader.ResolveType(definition.VariableType), definition.Index,
+                        PushNode(new StoreLocal(_assemblyLoader.ResolveType(definition.VariableType).GetStackType(),
+                            definition.Index,
                             PopNode()));
                         break;
                     }
