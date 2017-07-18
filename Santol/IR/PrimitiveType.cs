@@ -53,7 +53,8 @@ namespace Santol.IR
             ZeroExtend,
             SignExtend,
             Truncate,
-            IntToPtr
+            IntToPtr,
+            PtrToInt
         }
 
         private static readonly Dictionary<Tuple<PrimitiveType, PrimitiveType>, ConversionMethod> Conversions =
@@ -73,8 +74,11 @@ namespace Santol.IR
                 [new Tuple<PrimitiveType, PrimitiveType>(UInt32, UIntPtr)] = ConversionMethod.IntToPtr,
                 [new Tuple<PrimitiveType, PrimitiveType>(Int64, UInt64)] = ConversionMethod.Bitcast,
                 [new Tuple<PrimitiveType, PrimitiveType>(Int64, UIntPtr)] = ConversionMethod.IntToPtr,
+                [new Tuple<PrimitiveType, PrimitiveType>(UInt64, Int64)] = ConversionMethod.Bitcast,
                 [new Tuple<PrimitiveType, PrimitiveType>(UInt64, UIntPtr)] = ConversionMethod.IntToPtr,
-                [new Tuple<PrimitiveType, PrimitiveType>(IntPtr, UIntPtr)] = ConversionMethod.Bitcast
+                [new Tuple<PrimitiveType, PrimitiveType>(IntPtr, UIntPtr)] = ConversionMethod.Bitcast,
+                [new Tuple<PrimitiveType, PrimitiveType>(UIntPtr, UInt32)] = ConversionMethod.PtrToInt,
+                [new Tuple<PrimitiveType, PrimitiveType>(UIntPtr, UInt64)] = ConversionMethod.PtrToInt
             };
 
         private static readonly Dictionary<Tuple<PrimitiveType, PrimitiveType>, PrimitiveType> MostComplex =
@@ -197,6 +201,8 @@ namespace Santol.IR
                         return LLVM.BuildTrunc(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
                     case ConversionMethod.IntToPtr:
                         return LLVM.BuildIntToPtr(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
+                    case ConversionMethod.PtrToInt:
+                        return LLVM.BuildPtrToInt(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -224,6 +230,8 @@ namespace Santol.IR
                         return LLVM.BuildTrunc(codeGenerator.Builder, value, GetType(codeGenerator), "");
                     case ConversionMethod.IntToPtr:
                         return LLVM.BuildIntToPtr(codeGenerator.Builder, value, GetType(codeGenerator), "");
+                    case ConversionMethod.PtrToInt:
+                        return LLVM.BuildPtrToInt(codeGenerator.Builder, value, GetType(codeGenerator), "");
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
