@@ -100,21 +100,15 @@ namespace Santol.IR
                 throw new ArgumentException();
 
             int index = 0;
-            bool found = false;
             foreach (DictionaryEntry entry in _fields)
             {
                 IField field = (IField) entry.Value;
                 if (field.IsShared) continue;
                 if (field.Equals(target))
-                {
-                    found = true;
-                    break;
-                }
+                    return index;
                 index++;
             }
-            if (!found)
-                throw new ArgumentException();
-            return index;
+            throw new ArgumentException();
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
