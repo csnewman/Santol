@@ -1,8 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
@@ -31,7 +30,15 @@ namespace Santol.IR
 
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
-            throw new NotImplementedException();
+            return codeGenerator.GetStruct(MangledName, type =>
+            {
+                IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
+
+                // Add real type info
+                types.Add(LLVM.Int32TypeInContext(codeGenerator.Context));
+
+                LLVM.StructSetBody(type, types.ToArray(), false);
+            });
         }
 
         public LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value)

@@ -16,6 +16,7 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => false;
         public bool IsPointer => false;
+        public IType Parent { get; set; }
         private IOrderedDictionary _fields;
         private IDictionary<MethodReference, IMethod> _methods;
         private IType _localReferenceType;
@@ -54,8 +55,7 @@ namespace Santol.IR
             return codeGenerator.GetStruct(MangledName, type =>
             {
                 IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
-                // Add a real body
-                types.Add(LLVM.Int32TypeInContext(codeGenerator.Context));
+                types.Add(Parent.GetType(codeGenerator));
 
                 foreach (DictionaryEntry entry in _fields)
                 {
@@ -103,32 +103,25 @@ namespace Santol.IR
             return (IField) _fields[field];
         }
 
-        private int GetFieldIndex(IField target)
+        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField target)
         {
             if (target.IsShared)
-                throw new ArgumentException();
+                throw new ArgumentException("Shared fields address can't be resolved on an object pointer");
 
             int index = 0;
-            bool found = false;
             foreach (DictionaryEntry entry in _fields)
             {
                 IField field = (IField) entry.Value;
                 if (field.IsShared) continue;
                 if (field.Equals(target))
-                {
-                    found = true;
-                    break;
-                }
+                    return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, (uint) index + 1, "");
                 index++;
             }
-            if (!found)
-                throw new ArgumentException();
-            return index;
-        }
 
-        public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
-        {
-            return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, (uint) GetFieldIndex(field) + 1, "");
+            if (Parent != null)
+                return Parent.GetFieldAddress(codeGenerator,
+                    LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, 0, ""), target);
+            throw new ArgumentException("Field not found");
         }
 
         public LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field)

@@ -164,6 +164,9 @@ namespace Santol.Loader
             ClassType type = new ClassType(definition.FullName);
             _resolvedTypes.Add(definition, type);
 
+            if (definition.BaseType != null)
+                type.Parent = ResolveType(definition.BaseType);
+
             foreach (FieldDefinition field in definition.Fields)
             {
                 if (field.InitialValue.Length != 0)
