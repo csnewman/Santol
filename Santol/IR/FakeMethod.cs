@@ -19,6 +19,7 @@ namespace Santol.IR
         public string MangledName => throw new NotSupportedException();
         public bool IsStatic => throw new NotSupportedException();
         public bool IsLocal => throw new NotSupportedException();
+        public bool IsVirtual => throw new NotSupportedException();
         public int ArgumentOffset => throw new NotSupportedException();
         public IType ReturnType { get; }
         public IType[] Arguments { get; }

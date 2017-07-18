@@ -13,14 +13,14 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsStatic { get; }
         public bool IsLocal { get; }
+        public bool IsVirtual { get; }
         public int ArgumentOffset { get; }
         public IType ReturnType { get; }
         public IType[] Arguments { get; }
         private MethodBody _body;
 
-        public StandardMethod(IType parent, string name, bool isStatic, bool isLocal, bool implicitThis,
-            IType returnType,
-            IType[] arguments, MethodBody body)
+        public StandardMethod(IType parent, string name, bool isStatic, bool isLocal, bool isVirtual, bool implicitThis,
+            IType returnType, IType[] arguments, MethodBody body)
         {
             Parent = parent;
             Name = name;
@@ -28,6 +28,7 @@ namespace Santol.IR
                 $"{parent.MangledName}_SM_{returnType.MangledName}_{name}_{string.Join("_", arguments.Select(f => f.MangledName))}";
             IsStatic = isStatic;
             IsLocal = isLocal;
+            IsVirtual = isVirtual;
             ReturnType = returnType;
             _body = body;
 
