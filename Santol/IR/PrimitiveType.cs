@@ -261,15 +261,30 @@ namespace Santol.IR
             if (method.Name.Equals("op_Explicit"))
             {
                 IType fromType = assemblyLoader.ResolveType(method.Parameters[0].ParameterType);
-                return new FakeMethod(this, new[] {fromType},
-                    (generator, refs) =>
-                    {
-                        LLVMValueRef? val = ConvertFrom(generator, fromType, refs[0]);
-                        if (!val.HasValue)
-                            throw new NotSupportedException("Failed to convert");
-                        return val;
-                    }
-                );
+                IType targetType = assemblyLoader.ResolveType(method.ReturnType);
+
+                if (fromType.Equals(this))
+                    return new FakeMethod(targetType, new[] {fromType},
+                        (generator, refs) =>
+                        {
+                            LLVMValueRef? val = ConvertTo(generator, targetType, refs[0]);
+                            if (!val.HasValue)
+                                throw new NotSupportedException("Failed to convert");
+                            return val;
+                        }
+                    );
+                else if (targetType.Equals(this))
+                    return new FakeMethod(targetType, new[] {fromType},
+                        (generator, refs) =>
+                        {
+                            LLVMValueRef? val = ConvertFrom(generator, fromType, refs[0]);
+                            if (!val.HasValue)
+                                throw new NotSupportedException("Failed to convert");
+                            return val;
+                        }
+                    );
+                else
+                    throw new ArgumentException();
             }
             else
                 throw new NotSupportedException($"Unknown primitive method, {method.Name}");
