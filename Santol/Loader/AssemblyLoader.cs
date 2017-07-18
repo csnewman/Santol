@@ -35,7 +35,6 @@ namespace Santol.Loader
 
         public IType ResolveType(TypeReference reference)
         {
-            Console.WriteLine(" - Resolving type " + reference.FullName);
             TypeDefinition definition = reference.Resolve();
 
             switch (reference.MetadataType)
