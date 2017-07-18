@@ -652,7 +652,7 @@ namespace Santol.Loader
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
                         if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
-                                throw new NotSupportedException("Can not or two different types!");
+                            throw new NotSupportedException("Can not or two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Or, lhs, rhs));
                         break;
                     }
@@ -661,7 +661,7 @@ namespace Santol.Loader
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
                         if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
-                                throw new NotSupportedException("Can not xor two different types!");
+                            throw new NotSupportedException("Can not xor two different types!");
                         PushNode(new Numeric(Numeric.OperationType.XOr, lhs, rhs));
                         break;
                     }
