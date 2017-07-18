@@ -19,12 +19,15 @@ namespace Santol
 
         public static bool SignatureMatches(this IMethod method, IMethod otherMethod)
         {
+            if (method.IsLocal != otherMethod.IsLocal)
+                return false;
             if (!method.ReturnType.Equals(otherMethod.ReturnType))
                 return false;
             if (method.Arguments.Length != otherMethod.Arguments.Length)
                 return false;
-            for (int i = 0; i < method.Arguments.Length; i++)
-                if (!method.Arguments[i].Equals(otherMethod.Arguments[i]))
+            int thisOffset = method.IsLocal ? 1 : 0;
+            for (int i = 0; i < method.Arguments.Length - thisOffset; i++)
+                if (!method.Arguments[i + thisOffset].Equals(otherMethod.Arguments[i + thisOffset]))
                     return false;
             return true;
         }
