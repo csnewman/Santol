@@ -88,6 +88,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public bool IsStackCompatible(IType other)
+        {
+            throw new NotImplementedException();
+        }
+
         public IType GetMostComplexType(IType other)
         {
             throw new NotImplementedException();

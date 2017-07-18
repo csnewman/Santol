@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using LLVMSharp;
 using Mono.Cecil;
 using Santol.Generator;
@@ -81,6 +82,13 @@ namespace Santol.IR
             {
                 [new Tuple<PrimitiveType, PrimitiveType>(Boolean, Int32)] = Int32,
                 [new Tuple<PrimitiveType, PrimitiveType>(Char, Int32)] = Int32
+            };
+
+        private static readonly Dictionary<PrimitiveType, PrimitiveType[]> CompatiableTypes =
+            new Dictionary<PrimitiveType, PrimitiveType[]>
+            {
+                [Int64] = new[] {UInt64},
+                [UInt64] = new[] {Int64}
             };
 
         public string MangledName => Name;
@@ -221,6 +229,11 @@ namespace Santol.IR
                 }
             }
             return null;
+        }
+
+        public bool IsStackCompatible(IType other)
+        {
+            return Equals(other) || CompatiableTypes[this].Contains(other);
         }
 
         public IType GetMostComplexType(IType other)

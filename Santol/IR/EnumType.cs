@@ -67,6 +67,11 @@ namespace Santol.IR
             return type.Equals(UnderlyingType) ? value : UnderlyingType.ConvertFrom(codeGenerator, type, value);
         }
 
+        public bool IsStackCompatible(IType other)
+        {
+            return Equals(other);
+        }
+
         public IType GetMostComplexType(IType other)
         {
             throw new NotImplementedException();

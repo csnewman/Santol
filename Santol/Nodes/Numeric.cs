@@ -43,7 +43,7 @@ namespace Santol.Nodes
             if (rhs is EnumType)
                 rhs = ((EnumType) rhs).UnderlyingType;
 
-            if (lhs != rhs)
+            if (!lhs.IsStackCompatible(rhs))
                 throw new NotImplementedException("Numeric ops on different types not implemented yet");
             IType target = lhs;
 

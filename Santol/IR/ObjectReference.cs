@@ -60,6 +60,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public bool IsStackCompatible(IType other)
+        {
+            return Equals(other);
+        }
+
         public IType GetMostComplexType(IType other)
         {
             throw new NotImplementedException();

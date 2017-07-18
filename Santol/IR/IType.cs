@@ -26,6 +26,8 @@ namespace Santol.IR
 
         LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value);
 
+        bool IsStackCompatible(IType other);
+
         IType GetMostComplexType(IType other);
 
         IField ResolveField(FieldReference field);

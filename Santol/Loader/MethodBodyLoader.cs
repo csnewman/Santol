@@ -599,7 +599,7 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
                             throw new NotSupportedException("Can not add two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Add, lhs, rhs));
                         break;
@@ -608,7 +608,7 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
                             throw new NotSupportedException("Can not subtract two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Subtract, lhs, rhs));
                         break;
@@ -617,7 +617,7 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
                             throw new NotSupportedException("Can not multiply two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Multiply, lhs, rhs));
                         break;
@@ -626,7 +626,7 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
                             throw new NotSupportedException("Can not divide two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Divide, lhs, rhs));
                         break;
@@ -635,7 +635,7 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
                             throw new NotSupportedException("Can not find remainder of two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Remainder, lhs, rhs));
                         break;
@@ -651,8 +651,8 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
-                            throw new NotSupportedException("Can not or two different types!");
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
+                                throw new NotSupportedException("Can not or two different types!");
                         PushNode(new Numeric(Numeric.OperationType.Or, lhs, rhs));
                         break;
                     }
@@ -660,8 +660,8 @@ namespace Santol.Loader
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
-                        if (lhs.ResultType != rhs.ResultType)
-                            throw new NotSupportedException("Can not xor two different types!");
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
+                                throw new NotSupportedException("Can not xor two different types!");
                         PushNode(new Numeric(Numeric.OperationType.XOr, lhs, rhs));
                         break;
                     }
