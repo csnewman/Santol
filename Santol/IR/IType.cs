@@ -17,6 +17,8 @@ namespace Santol.IR
 
         IType GetStackType();
 
+        bool IsInHierarchy(IType type);
+
         LLVMTypeRef GetType(CodeGenerator codeGenerator);
 
         LLVMValueRef GenerateConstantValue(CodeGenerator codeGenerator, object value);

@@ -34,6 +34,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public bool IsInHierarchy(IType type)
+        {
+            return false;
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             return codeGenerator.GetStruct(MangledName, type =>

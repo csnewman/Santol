@@ -120,6 +120,11 @@ namespace Santol.IR
             return this;
         }
 
+        public bool IsInHierarchy(IType type)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             if (this == Void)

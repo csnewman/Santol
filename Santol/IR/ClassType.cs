@@ -63,6 +63,13 @@ namespace Santol.IR
             return _localReferenceType;
         }
 
+        public bool IsInHierarchy(IType type)
+        {
+            if (Parent == null)
+                return false;
+            return Parent.Equals(type) || Parent.IsInHierarchy(type);
+        }
+
         public LLVMTypeRef GetType(CodeGenerator codeGenerator)
         {
             return codeGenerator.GetStruct(MangledName, type =>
