@@ -25,7 +25,7 @@ namespace Santol
                 return false;
             if (method.Arguments.Length != otherMethod.Arguments.Length)
                 return false;
-            int thisOffset = method.IsLocal ? 1 : 0;
+            int thisOffset = method.IsStatic ? 0 : 1;
             for (int i = 0; i < method.Arguments.Length - thisOffset; i++)
                 if (!method.Arguments[i + thisOffset].Equals(otherMethod.Arguments[i + thisOffset]))
                     return false;
