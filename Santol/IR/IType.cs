@@ -11,6 +11,7 @@ namespace Santol.IR
         string MangledName { get; }
         bool IsAllowedOnStack { get; }
         bool IsPointer { get; }
+        TypeInfo TypeInfo { get; }
 
         IType GetLocalReferenceType();
 

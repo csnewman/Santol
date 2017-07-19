@@ -17,6 +17,12 @@ namespace Santol.IR
         public string MangledName => "object";
         public bool IsAllowedOnStack => false;
         public bool IsPointer => false;
+        public TypeInfo TypeInfo { get; }
+
+        private ObjectType()
+        {
+            TypeInfo = new TypeInfo(MangledName, null);
+        }
 
         public IType GetLocalReferenceType()
         {
@@ -33,10 +39,7 @@ namespace Santol.IR
             return codeGenerator.GetStruct(MangledName, type =>
             {
                 IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
-
-                // Add real type info
-                types.Add(LLVM.Int32TypeInContext(codeGenerator.Context));
-
+                types.Add(LLVM.PointerType(LLVM.Int8TypeInContext(codeGenerator.Context), 0));
                 LLVM.StructSetBody(type, types.ToArray(), false);
             });
         }

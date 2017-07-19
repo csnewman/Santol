@@ -16,6 +16,7 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
         public bool IsPointer => false;
+        public TypeInfo TypeInfo => throw new NotImplementedException();
         public IType UnderlyingType { get; }
         private IList<ConstantField> _fields;
 

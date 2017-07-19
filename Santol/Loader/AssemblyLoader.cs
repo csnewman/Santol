@@ -189,6 +189,8 @@ namespace Santol.Loader
                     method.HasThis && !method.ExplicitThis, ResolveType(method.ReturnType), args, method.Body));
             }
 
+            type.Init();
+
             return type;
         }
 

@@ -99,6 +99,7 @@ namespace Santol.IR
         public string Name { get; }
         public bool IsAllowedOnStack => true;
         public bool IsPointer => false;
+        public TypeInfo TypeInfo => throw new NotImplementedException();
         public int CilElementSize { get; }
         public Func<byte[], int, object> CilElementExtractor { get; }
 

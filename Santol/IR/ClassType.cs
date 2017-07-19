@@ -16,9 +16,10 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => false;
         public bool IsPointer => false;
+        public TypeInfo TypeInfo { get; private set; }
         public IType Parent { get; set; }
         private IOrderedDictionary _fields;
-        private IDictionary<MethodReference, IMethod> _methods;
+        private IOrderedDictionary _methods;
         private IType _localReferenceType;
 
         public ClassType(string name)
@@ -26,7 +27,7 @@ namespace Santol.IR
             Name = name;
             MangledName = $"C_{name.Replace('.', '_')}";
             _fields = new OrderedDictionary();
-            _methods = new Dictionary<MethodReference, IMethod>();
+            _methods = new OrderedDictionary();
             _localReferenceType = new ObjectReference(this);
         }
 
@@ -37,7 +38,19 @@ namespace Santol.IR
 
         public void AddMethod(MethodReference reference, IMethod method)
         {
-            _methods[reference] = method;
+            _methods.Add(reference, method);
+        }
+
+        public void Init()
+        {
+            TypeInfo = new TypeInfo(MangledName, Parent.TypeInfo);
+
+            foreach (DictionaryEntry entry in _methods)
+            {
+                IMethod method = (IMethod) entry.Value;
+                if (!method.IsStatic)
+                    TypeInfo.RegisterMethod(method);
+            }
         }
 
         public IType GetLocalReferenceType()
@@ -131,11 +144,13 @@ namespace Santol.IR
 
         public IMethod ResolveMethod(AssemblyLoader assemblyLoader, MethodReference method)
         {
-            return _methods[method];
+            return (IMethod) _methods[method];
         }
 
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
+            TypeInfo.Generate(codeGenerator, this);
+
             foreach (IField field in _fields.Values)
             {
                 Console.WriteLine($" - Generating {field.Name}");

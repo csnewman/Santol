@@ -16,6 +16,7 @@ namespace Santol.IR
         public string MangledName { get; }
         public bool IsAllowedOnStack => true;
         public bool IsPointer => true;
+        public TypeInfo TypeInfo => throw new NotImplementedException();
         public IType Target { get; }
 
         public PointerType(IType target)

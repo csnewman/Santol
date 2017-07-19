@@ -151,6 +151,7 @@
     <Compile Include="IR\StaticField.cs" />
     <Compile Include="IR\SequentialStructType.cs" />
     <Compile Include="IR\TypeHelper.cs" />
+    <Compile Include="IR\TypeInfo.cs" />
     <Compile Include="IR\Zone.cs" />
     <Compile Include="Loader\AssemblyLoader.cs" />
     <Compile Include="Loader\MethodBodyLoader.cs" />
