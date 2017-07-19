@@ -72,6 +72,7 @@ namespace Santol.IR
                 [new Tuple<PrimitiveType, PrimitiveType>(Int32, Int64)] = ConversionMethod.SignExtend,
                 [new Tuple<PrimitiveType, PrimitiveType>(UInt32, Int32)] = ConversionMethod.Bitcast,
                 [new Tuple<PrimitiveType, PrimitiveType>(UInt32, UIntPtr)] = ConversionMethod.IntToPtr,
+                [new Tuple<PrimitiveType, PrimitiveType>(Int64, Int32)] = ConversionMethod.Truncate,
                 [new Tuple<PrimitiveType, PrimitiveType>(Int64, UInt64)] = ConversionMethod.Bitcast,
                 [new Tuple<PrimitiveType, PrimitiveType>(Int64, UIntPtr)] = ConversionMethod.IntToPtr,
                 [new Tuple<PrimitiveType, PrimitiveType>(UInt64, Int64)] = ConversionMethod.Bitcast,

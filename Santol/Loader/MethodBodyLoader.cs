@@ -582,6 +582,9 @@ namespace Santol.Loader
                     case Code.Conv_I:
                         PushNode(new Nodes.Convert(PrimitiveType.IntPtr, PopNode()));
                         break;
+                    case Code.Conv_I4:
+                        PushNode(new Nodes.Convert(PrimitiveType.Int32, PopNode()));
+                        break;
                     case Code.Conv_I8:
                         PushNode(new Nodes.Convert(PrimitiveType.Int64, PopNode()));
                         break;
