@@ -58,12 +58,22 @@ namespace Santol.IR
 
         public LLVMValueRef? ConvertTo(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
-            throw new NotImplementedException();
+            ObjectReference other = type as ObjectReference;
+            if (other == null)
+                return null;
+            if (!Target.IsInHierarchy(other.Target))
+                return null;
+            return LLVM.BuildBitCast(codeGenerator.Builder, value, type.GetType(codeGenerator), "");
         }
 
         public LLVMValueRef? ConvertFrom(CodeGenerator codeGenerator, IType type, LLVMValueRef value)
         {
-            throw new NotImplementedException();
+            ObjectReference other = type as ObjectReference;
+            if (other == null)
+                return null;
+            if (!other.Target.IsInHierarchy(Target))
+                return null;
+            return LLVM.BuildBitCast(codeGenerator.Builder, value, GetType(codeGenerator), "");
         }
 
         public bool IsStackCompatible(IType other)
