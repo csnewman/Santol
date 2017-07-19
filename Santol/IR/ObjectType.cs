@@ -102,6 +102,13 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public IMethod FindMethodImplementation(IMethod method)
+        {
+            if (method.Name.Equals(".ctor"))
+                return FakeMethod.NoAction;
+            return null;
+        }
+
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             throw new NotImplementedException();

@@ -317,6 +317,11 @@ namespace Santol.IR
                 throw new NotSupportedException($"Unknown primitive method, {method.Name}");
         }
 
+        public IMethod FindMethodImplementation(IMethod method)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             throw new NotImplementedException();

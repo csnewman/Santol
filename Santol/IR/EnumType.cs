@@ -103,6 +103,11 @@ namespace Santol.IR
             throw new NotSupportedException("Enums can not have methods");
         }
 
+        public IMethod FindMethodImplementation(IMethod method)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             foreach (ConstantField constantField in _fields)

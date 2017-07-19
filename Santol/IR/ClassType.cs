@@ -154,6 +154,17 @@ namespace Santol.IR
             return (IMethod) _methods[method];
         }
 
+        public IMethod FindMethodImplementation(IMethod target)
+        {
+            foreach (DictionaryEntry entry in _methods)
+            {
+                IMethod method = (IMethod) entry.Value;
+                if (method.SignatureMatches(target))
+                    return method;
+            }
+            return Parent?.FindMethodImplementation(target);
+        }
+
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             TypeInfo.Generate(codeGenerator, this);

@@ -41,6 +41,8 @@ namespace Santol.IR
 
         IMethod ResolveMethod(AssemblyLoader assemblyLoader, MethodReference method);
 
+        IMethod FindMethodImplementation(IMethod method);
+
         void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator);
     }
 }

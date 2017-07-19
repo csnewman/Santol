@@ -132,6 +132,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public IMethod FindMethodImplementation(IMethod method)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             foreach (IField field in _fields.Values)
