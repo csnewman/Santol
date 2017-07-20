@@ -75,7 +75,8 @@ namespace Santol.IR
 
             // TODO: Resolve method implementations
             foreach (IMethod method in _methods)
-                values.Add(LLVM.ConstNull(LLVM.PointerType(method.GetMethodType(codeGenerator), 0)));
+                values.Add(LLVM.ConstBitCast(type.FindMethodImplementation(method).GetPointer(codeGenerator),
+                    LLVM.PointerType(method.GetMethodType(codeGenerator), 0)));
         }
 
         public void Generate(CodeGenerator codeGenerator, IType type)

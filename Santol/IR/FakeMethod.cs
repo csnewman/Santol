@@ -43,6 +43,11 @@ namespace Santol.IR
             throw new NotSupportedException();
         }
 
+        public LLVMValueRef GetPointer(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments)
         {
             return Body(codeGenerator, arguments);

@@ -20,6 +20,8 @@ namespace Santol.IR
 
         LLVMTypeRef GetMethodType(CodeGenerator codeGenerator);
 
+        LLVMValueRef GetPointer(CodeGenerator codeGenerator);
+
         LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments);
     }
 }

@@ -39,6 +39,11 @@ namespace Santol.IR
             return LLVM.FunctionType(returnType, argTypes, false);
         }
 
+        public LLVMValueRef GetPointer(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments)
         {
             LLVMTypeRef type = GetMethodType(codeGenerator);

@@ -84,10 +84,14 @@ namespace Santol.IR
             return LLVM.FunctionType(returnType, argTypes, false);
         }
 
+        public LLVMValueRef GetPointer(CodeGenerator codeGenerator)
+        {
+            return codeGenerator.GetFunction(MangledName, GetMethodType(codeGenerator));
+        }
+
         public LLVMValueRef? GenerateCall(CodeGenerator codeGenerator, LLVMValueRef[] arguments)
         {
-            LLVMTypeRef type = GetMethodType(codeGenerator);
-            LLVMValueRef function = codeGenerator.GetFunction(MangledName, type);
+            LLVMValueRef function = GetPointer(codeGenerator);
 
             if (ReturnType != PrimitiveType.Void)
                 return LLVM.BuildCall(codeGenerator.Builder, function, arguments, "");
