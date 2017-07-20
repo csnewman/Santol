@@ -549,6 +549,10 @@ namespace Santol.Loader
                         PushNode(new LoadField(PopNode(),
                             _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
                         break;
+                    case Code.Ldflda:
+                        PushNode(new LoadFieldAddress(PopNode(),
+                            _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
+                        break;
 
                     case Code.Ldind_U1:
                         PushNode(new LoadDirect(PrimitiveType.Byte, PopNode()));
