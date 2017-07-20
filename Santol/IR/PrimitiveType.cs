@@ -274,6 +274,11 @@ namespace Santol.IR
             throw new NotImplementedException($"Primitive types have no supported fields, {field.Name}");
         }
 
+        public LLVMValueRef Allocate(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
         {
             throw new NotImplementedException();

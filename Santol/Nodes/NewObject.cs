@@ -18,21 +18,12 @@ namespace Santol.Nodes
             Constructor = constructor;
             Arguments = arguments;
         }
-
+        
         [SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-            //Calculate size
-            LLVMTypeRef objectPtrType = Constructor.Parent.GetStackType().GetType(codeGenerator);
-            LLVMValueRef nullRef = LLVM.ConstNull(objectPtrType);
-            LLVMValueRef sizeRef = LLVM.ConstGEP(nullRef,
-                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(codeGenerator.Context), 1, false)});
-            LLVMValueRef objectSize = LLVM.BuildBitCast(codeGenerator.Builder, sizeRef,
-                PrimitiveType.UIntPtr.GetType(codeGenerator), "");
-
-            // Allocate space
-            LLVMValueRef spacePtr = Hooks.PlatformAllocate.GenerateCall(codeGenerator, new[] {objectSize}).Value;
-            LLVMValueRef objectPtr = LLVM.BuildBitCast(codeGenerator.Builder, spacePtr, objectPtrType, "");
+            IType target = Constructor.Parent;
+            LLVMValueRef objectPtr = target.Allocate(codeGenerator);
 
             // Call constructor
             LLVMValueRef[] args = new LLVMValueRef[Constructor.Arguments.Length];

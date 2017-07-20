@@ -44,7 +44,7 @@ namespace Santol.IR
             return codeGenerator.GetStruct(MangledName, type =>
             {
                 IList<LLVMTypeRef> types = new List<LLVMTypeRef>();
-                types.Add(LLVM.PointerType(LLVM.Int8TypeInContext(codeGenerator.Context), 0));
+//                types.Add(LLVM.PointerType(LLVM.Int8TypeInContext(codeGenerator.Context), 0));
                 LLVM.StructSetBody(type, types.ToArray(), false);
             });
         }
@@ -80,6 +80,11 @@ namespace Santol.IR
         }
 
         public IField ResolveField(FieldReference field)
+        {
+            throw new NotImplementedException();
+        }
+
+        public LLVMValueRef Allocate(CodeGenerator codeGenerator)
         {
             throw new NotImplementedException();
         }

@@ -81,6 +81,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public LLVMValueRef Allocate(CodeGenerator codeGenerator)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
         {
             throw new NotImplementedException();
