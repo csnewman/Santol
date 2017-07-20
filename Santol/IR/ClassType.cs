@@ -123,6 +123,11 @@ namespace Santol.IR
             return (IField) _fields[field];
         }
 
+        public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
+        {
+            return Parent.GetTypeInfoField(codeGenerator, LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, 0, ""));
+        }
+
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField target)
         {
             if (target.IsShared)

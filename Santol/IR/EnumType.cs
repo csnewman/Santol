@@ -88,6 +88,11 @@ namespace Santol.IR
             throw new NotSupportedException("Enums can not have fields");
         }
 
+        public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
+        {
+            throw new NotImplementedException();
+        }
+
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
         {
             throw new NotSupportedException("Enums can not have fields");

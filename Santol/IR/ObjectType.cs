@@ -84,6 +84,11 @@ namespace Santol.IR
             throw new NotImplementedException();
         }
 
+        public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
+        {
+            return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, 0, "");
+        }
+
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)
         {
             throw new NotImplementedException();

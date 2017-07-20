@@ -35,6 +35,8 @@ namespace Santol.IR
 
         IField ResolveField(FieldReference field);
 
+        LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr);
+
         LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field);
 
         LLVMValueRef ExtractField(CodeGenerator codeGenerator, LLVMValueRef objectRef, IField field);

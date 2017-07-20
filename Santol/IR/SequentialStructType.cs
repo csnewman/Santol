@@ -100,6 +100,11 @@ namespace Santol.IR
             return (IField) _fields[field];
         }
 
+        public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
+        {
+            throw new NotImplementedException();
+        }
+
         private int GetFieldIndex(IField target)
         {
             if (target.IsShared)
