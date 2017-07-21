@@ -145,7 +145,7 @@ namespace Santol.IR
 
         public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
         {
-            return Parent.GetTypeInfoField(codeGenerator, LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, 0, ""));
+            return LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, 0, "");
         }
 
         private bool FindField(ref int index, IField target)
