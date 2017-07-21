@@ -95,5 +95,32 @@ namespace Santol.IR
             LLVM.SetGlobalConstant(inst, true);
             LLVM.SetLinkage(inst, LLVMLinkage.LLVMExternalLinkage);
         }
+
+        private bool FindMethod(ref int index, IMethod target)
+        {
+            if (ParentInfo?.FindMethod(ref index, target) ?? false)
+                return true;
+
+            foreach (IMethod method in _methods)
+            {
+                if (method.SignatureMatches(target))
+                    return true;
+                index++;
+            }
+
+            return false;
+        }
+
+        public LLVMValueRef GetMethod(CodeGenerator codeGenerator, IMethod method, LLVMValueRef objectPtr)
+        {
+            int index = 3;
+            if (!FindMethod(ref index, method))
+                throw new ArgumentException("Method not found");
+
+            LLVMValueRef pointer = LLVM.BuildLoad(codeGenerator.Builder,
+                LLVM.BuildStructGEP(codeGenerator.Builder, objectPtr, (uint) index, ""), "");
+
+            return LLVM.BuildBitCast(codeGenerator.Builder, pointer, LLVM.PointerType(method.GetMethodType(codeGenerator), 0), "");
+        }
     }
 }

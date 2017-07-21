@@ -27,15 +27,30 @@ namespace Santol.Nodes
 
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
-//            LLVMValueRef[] args = new LLVMValueRef[Arguments.Length];
-//            for (int i = 0; i < args.Length; i++)
-//                args[args.Length - 1 - i] = Arguments[args.Length - 1 - i].GetRef(cgen,
-//                    Method.Parameters[args.Length - 1 - i].ParameterType);
-//
-//            LLVMValueRef? val = fgen.GenerateCall(Method, args);
-//            if (val.HasValue)
-//                SetLlvmRef(val.Value);
-            throw new NotImplementedException();
+            LLVMValueRef function;
+            if (Method.IsVirtual)
+            {
+                LLVMValueRef typeInfoPtr = LLVM.BuildLoad(codeGenerator.Builder,
+                    Instance.ResultType.GetTypeInfoField(codeGenerator, Instance.GetRef()),
+                    "");
+                function = Method.Parent.TypeInfo.GetMethod(codeGenerator, Method, typeInfoPtr);
+            }
+            else
+                function = Method.GetPointer(codeGenerator);
+
+            if (Method.Arguments.Length != Arguments.Length + 1)
+                throw new ArgumentException("Incorrect number of arguments!");
+
+            LLVMValueRef[] args = new LLVMValueRef[Method.Arguments.Length];
+            args[0] = Instance.GetRef(codeGenerator, Method.Arguments[0]);
+
+            for (int i = 0; i < Method.Arguments.Length - 1; i++)
+                args[1 + i] = Arguments[i].GetRef(codeGenerator, Method.Arguments[1 + i]);
+
+            if (Method.ReturnType != PrimitiveType.Void)
+                SetRef(LLVM.BuildCall(codeGenerator.Builder, function, args.ToArray(), ""));
+            else
+                LLVM.BuildCall(codeGenerator.Builder, function, args.ToArray(), "");
         }
 
         public override string ToFullString()

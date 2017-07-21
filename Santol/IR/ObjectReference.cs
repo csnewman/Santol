@@ -98,7 +98,7 @@ namespace Santol.IR
 
         public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
         {
-            throw new NotImplementedException();
+            return Target.GetTypeInfoField(codeGenerator, objectPtr);
         }
 
         public LLVMValueRef GetFieldAddress(CodeGenerator codeGenerator, LLVMValueRef objectPtr, IField field)

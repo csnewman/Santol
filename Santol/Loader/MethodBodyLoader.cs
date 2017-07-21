@@ -710,10 +710,10 @@ namespace Santol.Loader
                     {
                         IMethod method = _assemblyLoader.ResolveMethod((MethodReference) instruction.Operand);
 
-                        if (!method.IsLocal)
-                            throw new NotImplementedException("Expected a local method");
+                        if (method.IsStatic)
+                            throw new NotImplementedException("Expected a local/virtual method");
 
-                        NodeReference[] args = new NodeReference[method.Arguments.Length];
+                        NodeReference[] args = new NodeReference[method.Arguments.Length - 1];
 
                         for (int i = 0; i < args.Length; i++)
                             args[args.Length - 1 - i] = PopNode();
