@@ -238,6 +238,10 @@ namespace Santol.IR
                 LLVMValueRef spacePtr = Hooks.PlatformAllocate.GenerateCall(codeGenerator, new[] {objectSize}).Value;
                 LLVMValueRef objectPtr = LLVM.BuildBitCast(codeGenerator.Builder, spacePtr, objectPtrType, "");
 
+                // Add type info pointer
+                LLVMValueRef infoPtr = GetTypeInfoField(codeGenerator, objectPtr);
+                LLVM.BuildStore(codeGenerator.Builder, TypeInfo.GetPointer(codeGenerator), infoPtr);
+
                 // Return object pointer
                 LLVM.BuildRet(codeGenerator.Builder, objectPtr);
             }
