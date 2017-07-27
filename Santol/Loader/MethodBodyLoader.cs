@@ -557,8 +557,29 @@ namespace Santol.Loader
                             _assemblyLoader.ResolveField((FieldReference) instruction.Operand)));
                         break;
 
+                    case Code.Ldind_I:
+                        PushNode(new LoadDirect(PrimitiveType.IntPtr, PopNode()));
+                        break;
+                    case Code.Ldind_I1:
+                        PushNode(new LoadDirect(PrimitiveType.SByte, PopNode()));
+                        break;
                     case Code.Ldind_U1:
                         PushNode(new LoadDirect(PrimitiveType.Byte, PopNode()));
+                        break;
+                    case Code.Ldind_I2:
+                        PushNode(new LoadDirect(PrimitiveType.Int16, PopNode()));
+                        break;
+                    case Code.Ldind_U2:
+                        PushNode(new LoadDirect(PrimitiveType.UInt16, PopNode()));
+                        break;
+                    case Code.Ldind_I4:
+                        PushNode(new LoadDirect(PrimitiveType.Int32, PopNode()));
+                        break;
+                    case Code.Ldind_U4:
+                        PushNode(new LoadDirect(PrimitiveType.UInt32, PopNode()));
+                        break;
+                    case Code.Ldind_I8:
+                        PushNode(new LoadDirect(PrimitiveType.Int64, PopNode()));
                         break;
 
                     case Code.Stloc:
@@ -582,10 +603,20 @@ namespace Santol.Loader
                             val));
                         break;
                     }
+
                     case Code.Stind_I1:
                         PushNode(new StoreDirect(PrimitiveType.Byte, PopNode(), PopNode()));
                         break;
-
+                    case Code.Stind_I2:
+                        PushNode(new StoreDirect(PrimitiveType.Int16, PopNode(), PopNode()));
+                        break;
+                    case Code.Stind_I4:
+                        PushNode(new StoreDirect(PrimitiveType.Int32, PopNode(), PopNode()));
+                        break;
+                    case Code.Stind_I8:
+                        PushNode(new StoreDirect(PrimitiveType.Int64, PopNode(), PopNode()));
+                        break;
+                        
                     case Code.Conv_I:
                         PushNode(new Nodes.Convert(PrimitiveType.IntPtr, PopNode()));
                         break;
