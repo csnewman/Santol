@@ -604,6 +604,9 @@ namespace Santol.Loader
                         break;
                     }
 
+                    case Code.Stind_I:
+                        PushNode(new StoreDirect(PrimitiveType.IntPtr, PopNode(), PopNode()));
+                        break;
                     case Code.Stind_I1:
                         PushNode(new StoreDirect(PrimitiveType.Byte, PopNode(), PopNode()));
                         break;
@@ -959,8 +962,8 @@ namespace Santol.Loader
                         NodeReference v1 = PopNode();
                         NodeReference cond =
                             AddNode(new Comparison(Comparison.OperationType.GreaterThanOrEqualUnsigned, v1, v2));
-                        Block target = GetBlock((Instruction)instruction.Operand);
-                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
                         Tuple<IType[], NodeReference[]> stack = CollapseStack();
                         target.AddCaller(block, stack.Item1);
                         elseTarget.AddCaller(block, stack.Item1);
@@ -973,8 +976,8 @@ namespace Santol.Loader
                         NodeReference v1 = PopNode();
                         NodeReference cond =
                             AddNode(new Comparison(Comparison.OperationType.GreaterThanUnsigned, v1, v2));
-                        Block target = GetBlock((Instruction)instruction.Operand);
-                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
                         Tuple<IType[], NodeReference[]> stack = CollapseStack();
                         target.AddCaller(block, stack.Item1);
                         elseTarget.AddCaller(block, stack.Item1);
@@ -987,8 +990,8 @@ namespace Santol.Loader
                         NodeReference v1 = PopNode();
                         NodeReference cond =
                             AddNode(new Comparison(Comparison.OperationType.LessThanOrEqualUnsigned, v1, v2));
-                        Block target = GetBlock((Instruction)instruction.Operand);
-                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
                         Tuple<IType[], NodeReference[]> stack = CollapseStack();
                         target.AddCaller(block, stack.Item1);
                         elseTarget.AddCaller(block, stack.Item1);
@@ -1001,8 +1004,8 @@ namespace Santol.Loader
                         NodeReference v1 = PopNode();
                         NodeReference cond =
                             AddNode(new Comparison(Comparison.OperationType.LessThanUnsigned, v1, v2));
-                        Block target = GetBlock((Instruction)instruction.Operand);
-                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
                         Tuple<IType[], NodeReference[]> stack = CollapseStack();
                         target.AddCaller(block, stack.Item1);
                         elseTarget.AddCaller(block, stack.Item1);
