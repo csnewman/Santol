@@ -134,51 +134,6 @@ namespace Santol.Generator
             LLVM.BuildStore(_codeGenerator.Builder, value, address);
         }
 
-        public LLVMValueRef GetStructElement(LLVMValueRef address, int index)
-        {
-            return LLVM.BuildStructGEP(_codeGenerator.Builder, address, (uint) index, "");
-        }
-
-        public LLVMValueRef AddInts(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildAdd(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef SubtractInts(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildSub(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef MultiplyInts(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildMul(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef DivideInts(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildSDiv(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef RemainderInts(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildSRem(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef ShiftLeft(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildShl(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef Or(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildOr(_codeGenerator.Builder, v1, v2, "");
-        }
-
-        public LLVMValueRef XOr(LLVMValueRef v1, LLVMValueRef v2)
-        {
-            return LLVM.BuildXor(_codeGenerator.Builder, v1, v2, "");
-        }
-
         public LLVMValueRef CompareInts(LLVMIntPredicate op, LLVMValueRef v1, LLVMValueRef v2)
         {
             return LLVM.BuildICmp(_codeGenerator.Builder, op, v1, v2, "");

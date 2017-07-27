@@ -14,10 +14,17 @@ namespace Santol.Nodes
             Subtract,
             Multiply,
             Divide,
+            DivideUnsigned,
             Remainder,
+            RemainderUnsigned,
             ShiftLeft,
+            ShiftRight,
+            ShiftRightUnsigned,
+            Not,
+            And,
             Or,
-            XOr
+            XOr,
+            Negate
         }
 
         public NodeReference Lhs { get; }
@@ -36,45 +43,71 @@ namespace Santol.Nodes
         public override void Generate(CodeGenerator codeGenerator, FunctionGenerator fgen)
         {
             IType lhs = Lhs.ResultType;
-            IType rhs = Rhs.ResultType;
-
             if (lhs is EnumType)
                 lhs = ((EnumType) lhs).UnderlyingType;
+            LLVMValueRef lhsValue = Lhs.GetRef(codeGenerator, lhs);
+
+            IType target = lhs;
+            if (Operation == OperationType.Not)
+            {
+                SetRef(codeGenerator, target, LLVM.BuildNot(codeGenerator.Builder, lhsValue, ""));
+                return;
+            }
+            else if (Operation == OperationType.Negate)
+            {
+                SetRef(codeGenerator, target, LLVM.BuildNeg(codeGenerator.Builder, lhsValue, ""));
+                return;
+            }
+
+            IType rhs = Rhs.ResultType;
+
             if (rhs is EnumType)
                 rhs = ((EnumType) rhs).UnderlyingType;
+            LLVMValueRef rhsValue = Rhs.GetRef(codeGenerator, target);
 
             if (!lhs.IsStackCompatible(rhs))
                 throw new NotImplementedException("Numeric ops on different types not implemented yet");
-            IType target = lhs;
-
-            LLVMValueRef lhsValue = Lhs.GetRef(codeGenerator, target);
-            LLVMValueRef rhsValue = Rhs.GetRef(codeGenerator, target);
 
             switch (Operation)
             {
                 case OperationType.Add:
-                    SetRef(codeGenerator, target, fgen.AddInts(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildAdd(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.Subtract:
-                    SetRef(codeGenerator, target, fgen.SubtractInts(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildSub(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.Multiply:
-                    SetRef(codeGenerator, target, fgen.MultiplyInts(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildMul(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.Divide:
-                    SetRef(codeGenerator, target, fgen.DivideInts(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildSDiv(codeGenerator.Builder, lhsValue, rhsValue, ""));
+                    break;
+                case OperationType.DivideUnsigned:
+                    SetRef(codeGenerator, target, LLVM.BuildUDiv(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.Remainder:
-                    SetRef(codeGenerator, target, fgen.RemainderInts(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildSRem(codeGenerator.Builder, lhsValue, rhsValue, ""));
+                    break;
+                case OperationType.RemainderUnsigned:
+                    SetRef(codeGenerator, target, LLVM.BuildURem(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.ShiftLeft:
-                    SetRef(codeGenerator, target, fgen.ShiftLeft(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildShl(codeGenerator.Builder, lhsValue, rhsValue, ""));
+                    break;
+                case OperationType.ShiftRight:
+                    SetRef(codeGenerator, target, LLVM.BuildAShr(codeGenerator.Builder, lhsValue, rhsValue, ""));
+                    break;
+                case OperationType.ShiftRightUnsigned:
+                    SetRef(codeGenerator, target, LLVM.BuildLShr(codeGenerator.Builder, lhsValue, rhsValue, ""));
+                    break;
+                case OperationType.And:
+                    SetRef(codeGenerator, target, LLVM.BuildAnd(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.Or:
-                    SetRef(codeGenerator, target, fgen.Or(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildOr(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 case OperationType.XOr:
-                    SetRef(codeGenerator, target, fgen.XOr(lhsValue, rhsValue));
+                    SetRef(codeGenerator, target, LLVM.BuildXor(codeGenerator.Builder, lhsValue, rhsValue, ""));
                     break;
                 default:
                     throw new NotImplementedException("Unknown operationType " + Operation);

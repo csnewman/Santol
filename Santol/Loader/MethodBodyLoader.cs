@@ -616,7 +616,7 @@ namespace Santol.Loader
                     case Code.Stind_I8:
                         PushNode(new StoreDirect(PrimitiveType.Int64, PopNode(), PopNode()));
                         break;
-                        
+
                     case Code.Conv_I:
                         PushNode(new Nodes.Convert(PrimitiveType.IntPtr, PopNode()));
                         break;
@@ -684,6 +684,15 @@ namespace Santol.Loader
                         PushNode(new Numeric(Numeric.OperationType.Divide, lhs, rhs));
                         break;
                     }
+                    case Code.Div_Un:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
+                            throw new NotSupportedException("Can not divide two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.DivideUnsigned, lhs, rhs));
+                        break;
+                    }
                     case Code.Rem:
                     {
                         NodeReference rhs = PopNode();
@@ -693,11 +702,43 @@ namespace Santol.Loader
                         PushNode(new Numeric(Numeric.OperationType.Remainder, lhs, rhs));
                         break;
                     }
+                    case Code.Rem_Un:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
+                            throw new NotSupportedException("Can not find remainder of two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.RemainderUnsigned, lhs, rhs));
+                        break;
+                    }
                     case Code.Shl:
                     {
                         NodeReference rhs = PopNode();
                         NodeReference lhs = PopNode();
                         PushNode(new Numeric(Numeric.OperationType.ShiftLeft, lhs, rhs));
+                        break;
+                    }
+                    case Code.Shr:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Numeric(Numeric.OperationType.ShiftRight, lhs, rhs));
+                        break;
+                    }
+                    case Code.Shr_Un:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        PushNode(new Numeric(Numeric.OperationType.ShiftRightUnsigned, lhs, rhs));
+                        break;
+                    }
+                    case Code.And:
+                    {
+                        NodeReference rhs = PopNode();
+                        NodeReference lhs = PopNode();
+                        if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
+                            throw new NotSupportedException("Can not or two different types!");
+                        PushNode(new Numeric(Numeric.OperationType.And, lhs, rhs));
                         break;
                     }
                     case Code.Or:
@@ -716,6 +757,18 @@ namespace Santol.Loader
                         if (!lhs.ResultType.IsStackCompatible(rhs.ResultType))
                             throw new NotSupportedException("Can not xor two different types!");
                         PushNode(new Numeric(Numeric.OperationType.XOr, lhs, rhs));
+                        break;
+                    }
+                    case Code.Not:
+                    {
+                        NodeReference lhs = PopNode();
+                        PushNode(new Numeric(Numeric.OperationType.Not, lhs, null));
+                        break;
+                    }
+                    case Code.Neg:
+                    {
+                        NodeReference lhs = PopNode();
+                        PushNode(new Numeric(Numeric.OperationType.Negate, lhs, null));
                         break;
                     }
 
