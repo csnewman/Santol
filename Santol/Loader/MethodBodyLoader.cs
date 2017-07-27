@@ -869,6 +869,20 @@ namespace Santol.Loader
                         PushNode(new ConditionalBranch(elseTarget, target, cond, stack.Item2));
                         return;
                     }
+                    case Code.Beq:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.Equal, v1, v2));
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
                     case Code.Ble:
                     {
                         NodeReference v2 = PopNode();
