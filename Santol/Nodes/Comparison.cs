@@ -11,6 +11,7 @@ namespace Santol.Nodes
         public enum OperationType
         {
             Equal,
+            LessThanOrEqual,
             LessThan,
             GreaterThanOrEqual,
             GreaterThan
@@ -42,6 +43,10 @@ namespace Santol.Nodes
                 case OperationType.LessThan:
                     SetRef(codeGenerator, PrimitiveType.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, lhsValue, rhsValue));
+                    break;
+                case OperationType.LessThanOrEqual:
+                    SetRef(codeGenerator, PrimitiveType.Boolean,
+                        fgen.CompareInts(LLVMIntPredicate.LLVMIntSLE, lhsValue, rhsValue));
                     break;
                 case OperationType.GreaterThan:
                     SetRef(codeGenerator, PrimitiveType.Boolean,
