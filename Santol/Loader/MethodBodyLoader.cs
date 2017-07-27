@@ -499,6 +499,9 @@ namespace Santol.Loader
                     case Code.Nop:
                         break;
 
+                    case Code.Pop:
+                        _nodeStack.Pop();
+                        break;
                     case Code.Dup:
                     {
                         Node node = _nodeStack.Pop();
