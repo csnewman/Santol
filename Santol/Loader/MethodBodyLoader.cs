@@ -939,6 +939,76 @@ namespace Santol.Loader
                         PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
                         return;
                     }
+                    case Code.Bne_Un:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.Equal, v1, v2));
+                        Block target = GetBlock((Instruction) instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction) instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(elseTarget, target, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Bge_Un:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.GreaterThanOrEqualUnsigned, v1, v2));
+                        Block target = GetBlock((Instruction)instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Bgt_Un:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.GreaterThanUnsigned, v1, v2));
+                        Block target = GetBlock((Instruction)instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Ble_Un:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.LessThanOrEqualUnsigned, v1, v2));
+                        Block target = GetBlock((Instruction)instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
+                    case Code.Blt_Un:
+                    {
+                        NodeReference v2 = PopNode();
+                        NodeReference v1 = PopNode();
+                        NodeReference cond =
+                            AddNode(new Comparison(Comparison.OperationType.LessThanUnsigned, v1, v2));
+                        Block target = GetBlock((Instruction)instruction.Operand);
+                        Block elseTarget = GetBlock((Instruction)instruction.Next.Operand);
+                        Tuple<IType[], NodeReference[]> stack = CollapseStack();
+                        target.AddCaller(block, stack.Item1);
+                        elseTarget.AddCaller(block, stack.Item1);
+                        PushNode(new ConditionalBranch(target, elseTarget, cond, stack.Item2));
+                        return;
+                    }
                     case Code.Ret:
                         PushNode(new Return(_method.ReturnType != PrimitiveType.Void ? PopNode() : null));
                         return;

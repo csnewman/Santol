@@ -12,9 +12,13 @@ namespace Santol.Nodes
         {
             Equal,
             LessThanOrEqual,
+            LessThanOrEqualUnsigned,
             LessThan,
+            LessThanUnsigned,
             GreaterThanOrEqual,
-            GreaterThan
+            GreaterThanOrEqualUnsigned,
+            GreaterThan,
+            GreaterThanUnsigned
         }
 
         public NodeReference Lhs { get; }
@@ -44,17 +48,33 @@ namespace Santol.Nodes
                     SetRef(codeGenerator, PrimitiveType.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSLT, lhsValue, rhsValue));
                     break;
+                case OperationType.LessThanUnsigned:
+                    SetRef(codeGenerator, PrimitiveType.Boolean,
+                        fgen.CompareInts(LLVMIntPredicate.LLVMIntULT, lhsValue, rhsValue));
+                    break;
                 case OperationType.LessThanOrEqual:
                     SetRef(codeGenerator, PrimitiveType.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSLE, lhsValue, rhsValue));
+                    break;
+                case OperationType.LessThanOrEqualUnsigned:
+                    SetRef(codeGenerator, PrimitiveType.Boolean,
+                        fgen.CompareInts(LLVMIntPredicate.LLVMIntULE, lhsValue, rhsValue));
                     break;
                 case OperationType.GreaterThan:
                     SetRef(codeGenerator, PrimitiveType.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSGT, lhsValue, rhsValue));
                     break;
+                case OperationType.GreaterThanUnsigned:
+                    SetRef(codeGenerator, PrimitiveType.Boolean,
+                        fgen.CompareInts(LLVMIntPredicate.LLVMIntUGT, lhsValue, rhsValue));
+                    break;
                 case OperationType.GreaterThanOrEqual:
                     SetRef(codeGenerator, PrimitiveType.Boolean,
                         fgen.CompareInts(LLVMIntPredicate.LLVMIntSGE, lhsValue, rhsValue));
+                    break;
+                case OperationType.GreaterThanOrEqualUnsigned:
+                    SetRef(codeGenerator, PrimitiveType.Boolean,
+                        fgen.CompareInts(LLVMIntPredicate.LLVMIntUGE, lhsValue, rhsValue));
                     break;
                 case OperationType.Equal:
                     SetRef(codeGenerator, PrimitiveType.Boolean,
