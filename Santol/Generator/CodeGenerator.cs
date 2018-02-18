@@ -9,6 +9,7 @@ namespace Santol.Generator
     public class CodeGenerator
     {
         public string TargetPlatform { get; }
+        public string DataLayout { get; }
         public int OptimisationLevel { get; }
         public LLVMPassManagerRef? PassManager { get; set; }
         public LLVMModuleRef Module { get; private set; }
@@ -18,9 +19,10 @@ namespace Santol.Generator
         private IDictionary<string, LLVMTypeRef> _structCache;
         private IDictionary<string, LLVMValueRef> _functionCache;
 
-        public CodeGenerator(string targetPlatform, int optimisation, string moduleName)
+        public CodeGenerator(string targetPlatform, string dataLayout, int optimisation, string moduleName)
         {
             TargetPlatform = targetPlatform;
+            DataLayout = dataLayout;
             OptimisationLevel = optimisation;
 
             if (optimisation != -1)
@@ -35,7 +37,8 @@ namespace Santol.Generator
             Context = LLVM.GetModuleContext(Module);
             Builder = LLVM.CreateBuilder();
             LLVM.SetTarget(Module, TargetPlatform);
-
+            LLVM.SetDataLayout(Module, dataLayout);
+            
             LLVM.AddNamedMetadataOperand(Module, "llvm.module.flags", LLVM.MDNode(new[]
             {
                 LLVM.ConstInt(LLVM.Int32Type(), 2, false),

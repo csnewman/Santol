@@ -12,6 +12,7 @@ namespace Santol
     public class Compiler
     {
         public string TargetPlatform { get; set; }
+        public string DataLayout { get; set; }
         public string HostPlatform => Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple());
         public int OptimisationLevel { get; set; }
 
@@ -31,7 +32,7 @@ namespace Santol
             IList<IType> types = loader.Load(source);
 
             // Generate types
-            CodeGenerator codeGenerator = new CodeGenerator(TargetPlatform, OptimisationLevel,
+            CodeGenerator codeGenerator = new CodeGenerator(TargetPlatform, DataLayout, OptimisationLevel,
                 "Module_" + Path.GetFileNameWithoutExtension(dest));
 
             foreach (IType type in types)

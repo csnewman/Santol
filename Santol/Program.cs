@@ -9,6 +9,7 @@ namespace Santol
             Compiler compiler = new Compiler();
             compiler.InitLLVM();
             compiler.TargetPlatform = "i386-pc-none-elf";
+            compiler.DataLayout = "p:32:32:32";
             compiler.OptimisationLevel = 3;
 
             compiler.Compile("Rowan.dll", "Rowan.o");
