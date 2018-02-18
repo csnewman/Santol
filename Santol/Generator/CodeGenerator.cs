@@ -56,9 +56,8 @@ namespace Santol.Generator
 
         public void DumpModuleToFile(string file)
         {
-            IntPtr error;
+            string error;
             LLVM.PrintModuleToFile(Module, file, out error);
-            LLVM.DisposeMessage(error);
         }
 
         public void OptimiseModule()
@@ -69,10 +68,9 @@ namespace Santol.Generator
 
         public void CompileModule(string file)
         {
-            IntPtr error;
+            string error;
             LLVMTargetRef tref;
             LLVM.GetTargetFromTriple(TargetPlatform, out tref, out error);
-            LLVM.DisposeMessage(error);
 
             LLVMTargetMachineRef machineRef = LLVM.CreateTargetMachine(tref, TargetPlatform, "generic", "",
                 LLVMCodeGenOptLevel.LLVMCodeGenLevelDefault, LLVMRelocMode.LLVMRelocDefault,
