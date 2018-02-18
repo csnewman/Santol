@@ -11,8 +11,6 @@ namespace Santol
 {
     public class Compiler
     {
-        public bool GenerateGraphs { get; set; }
-        public string GraphsTargetDirectory { get; set; }
         public string TargetPlatform { get; set; }
         public string HostPlatform => Marshal.PtrToStringAnsi(LLVM.GetDefaultTargetTriple());
         public int OptimisationLevel { get; set; }
