@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using GraphvizWrapper;
 using LLVMSharp;
 using Santol.Generator;
 using Santol.IR;
@@ -12,7 +11,6 @@ namespace Santol
 {
     public class Compiler
     {
-        public Graphviz Graphviz { get; set; }
         public bool GenerateGraphs { get; set; }
         public string GraphsTargetDirectory { get; set; }
         public string TargetPlatform { get; set; }
