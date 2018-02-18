@@ -134,13 +134,27 @@ namespace Santol.IR
             return (IField) _fields[field];
         }
 
+        [SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
         public LLVMValueRef Allocate(CodeGenerator codeGenerator)
         {
             LLVMTypeRef objectPtrType = GetStackType().GetType(codeGenerator);
-            LLVMValueRef function =
-                codeGenerator.GetFunction($"Allocate_{MangledName}",
-                    LLVM.FunctionType(objectPtrType, new LLVMTypeRef[0], false));
-            return LLVM.BuildCall(codeGenerator.Builder, function, new LLVMValueRef[0], "");
+
+            // Calculate size
+            LLVMValueRef nullRef = LLVM.ConstNull(objectPtrType);
+            LLVMValueRef sizeRef = LLVM.ConstGEP(nullRef,
+                new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(codeGenerator.Context), 1, false)});
+            LLVMValueRef objectSize = LLVM.BuildBitCast(codeGenerator.Builder, sizeRef,
+                PrimitiveType.UIntPtr.GetType(codeGenerator), "");
+
+            // Allocate space
+            LLVMValueRef spacePtr = Hooks.PlatformAllocate.GenerateCall(codeGenerator, new[] {objectSize}).Value;
+            LLVMValueRef objectPtr = LLVM.BuildBitCast(codeGenerator.Builder, spacePtr, objectPtrType, "");
+
+            // Add type info pointer
+            LLVMValueRef infoPtr = GetTypeInfoField(codeGenerator, objectPtr);
+            LLVM.BuildStore(codeGenerator.Builder, TypeInfo.GetPointer(codeGenerator), infoPtr);
+
+            return objectPtr;
         }
 
         public LLVMValueRef GetTypeInfoField(CodeGenerator codeGenerator, LLVMValueRef objectPtr)
@@ -199,7 +213,6 @@ namespace Santol.IR
             return Parent?.FindMethodImplementation(target);
         }
 
-        [SuppressMessage("ReSharper", "PossibleInvalidOperationException")]
         public void Generate(AssemblyLoader assemblyLoader, CodeGenerator codeGenerator)
         {
             TypeInfo.Generate(codeGenerator, this);
@@ -214,36 +227,6 @@ namespace Santol.IR
             {
                 Console.WriteLine($" - Generating {method.Name}");
                 method.Generate(assemblyLoader, codeGenerator);
-            }
-
-            {
-                LLVMTypeRef objectPtrType = GetStackType().GetType(codeGenerator);
-
-                // Define function
-                LLVMValueRef function =
-                    codeGenerator.GetFunction($"Allocate_{MangledName}",
-                        LLVM.FunctionType(objectPtrType, new LLVMTypeRef[0], false));
-                LLVM.SetLinkage(function, LLVMLinkage.LLVMExternalLinkage);
-                FunctionGenerator functionGenerator = new FunctionGenerator(codeGenerator, null, function);
-                functionGenerator.CreateBlock("entry", null);
-
-                // Calculate size
-                LLVMValueRef nullRef = LLVM.ConstNull(objectPtrType);
-                LLVMValueRef sizeRef = LLVM.ConstGEP(nullRef,
-                    new[] {LLVM.ConstInt(LLVM.Int32TypeInContext(codeGenerator.Context), 1, false)});
-                LLVMValueRef objectSize = LLVM.BuildBitCast(codeGenerator.Builder, sizeRef,
-                    PrimitiveType.UIntPtr.GetType(codeGenerator), "");
-
-                // Allocate space
-                LLVMValueRef spacePtr = Hooks.PlatformAllocate.GenerateCall(codeGenerator, new[] {objectSize}).Value;
-                LLVMValueRef objectPtr = LLVM.BuildBitCast(codeGenerator.Builder, spacePtr, objectPtrType, "");
-
-                // Add type info pointer
-                LLVMValueRef infoPtr = GetTypeInfoField(codeGenerator, objectPtr);
-                LLVM.BuildStore(codeGenerator.Builder, TypeInfo.GetPointer(codeGenerator), infoPtr);
-
-                // Return object pointer
-                LLVM.BuildRet(codeGenerator.Builder, objectPtr);
             }
         }
     }
