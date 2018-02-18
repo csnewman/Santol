@@ -19,11 +19,11 @@ namespace Santol
 
         public void InitLLVM()
         {
-            LLVM.InitializeAllTargetInfos();
-            LLVM.InitializeAllTargets();
-            LLVM.InitializeAllTargetMCs();
-            LLVM.InitializeAllAsmParsers();
-            LLVM.InitializeAllAsmPrinters();
+            LLVM.InitializeX86TargetInfo();
+            LLVM.InitializeX86Target();
+            LLVM.InitializeX86TargetMC();
+            LLVM.InitializeX86AsmParser();
+            LLVM.InitializeX86AsmPrinter();
         }
 
         public void Compile(string source, string dest)
